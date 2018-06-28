@@ -1,0 +1,116 @@
+Advanced LSD Modules - ...
+
+Gathering all the stuff under a single theme: Advanced LSD.
+Starting with:
+ABMAT (analysis only) -> ABMAT Module ; Analysis of ABM
+Geo -> GIS Module ; Geography implementation to LSD
+Pop -> POP Module ; statistical POPulation model Module
+debug -> MAIN Module ; Links all modules, provides debugging utilities, etc.
+pajek -> pajek Module ; Descriptive Network Data for visualisation with Pajek. More flexible than standard LSD tool, but only for analysis outside LSD
+
+
+Uncertain (if needed)
+DOE module
+ABMAT-advanced  (automatic stopping, etc.)
+
+Once the module is fine, it should be hosted on GIT.
+
+
+Status:
+
+Population Model module is implemented and runnning fine. Includes a heritage network.
+GIS Model is implemented and (as far as tested) running fine. Includes a geo-distance search, with world-wrapping on all four corners switchable.
+
+Most important to do: Document! Test by someone else!
+
+
+-----port from SPM former ---
+Population Dynamics Template Model
+
+Objective: This is a template model, to be used as a starting point for LSD models where an 
+explicit population model is wanted that
+- has realistic survival laws, based on few (two) parameters
+- yields stable population statistics, if wanted
+- includes a heritage network that survives the agents
+
+The template also uses the ABMAT module for automated descriptive analysis of a
+single run, and the tools module for debuging and validation information. See
+the readmes under the specific externals folders for details.
+
+Design Concepts:
+ ;
+	A) Representation
+	
+	In LSD there is an object "Agent". For each such object, an instance of 
+	"ext_pop_agent" exists in the backend "ext_pop". The backend is attached
+	to the LSD object "Pop_model". Currently only one kind of population is
+	possible. Different societies thus need to share the same survival function. 
+	[It is possible to differentiate the birth rates, in principle].
+	
+	The backend keeps track of agents alive and dead. This way, the heritage net-
+	work is accesable even if single persons die. For example, even if both 
+	parents are dead, one could track the parents and via the parents the siblings
+	of an agent, or cousins, etc.
+	
+	The backend also provides access to a random cycle method for agents currently
+	alive via a macro:
+	
+		cur=NULL; //use the LSD object pointer cur to refer to the agents in the 
+							//cycle
+		cur1=SEARCH("Pop_model); //the population model LSD object, where the backen
+		                         //is hooked
+		POP_RCYCLE_AGENTS(cur1,cur){  
+			//do something with cur
+		}
+		
+	In the user file "fun_templ_pop" there are the following equations:
+	
+	EQUATION("Updating_Scheme")	//controls the order in which events happen
+		Although not necessary, it is recommended to add user model events to
+		this updating scheme, to ensure the correct order (on top of LSD taking 
+		care that equations are updated when necessary and at most once per t)
+		
+	EQUATION("Init_New_Agent") //add stuff that happens when a new agent is 
+		created. Called via fake-caller, so c refers to that agent.
+	
+	EQUATION("Init_Global") Global initialisation.
+	
+	EQUATION("Delete_Agent") //add stuff that happens when an agent dies. Called 
+		via fake-caller, so c refers to that agent.
+	
+	B) Theory
+		1) As an example, we incorporate the (potentially) constant population model 
+			from [1], which is both simple and realistic enough.
+			- Parameters:
+					. alpha (incr: longer life, mainly because young die less)
+					. beta (incr: old people benefit more from drop in death rates)
+					. n_agent (initial n agents, also in constant birth rate case ~ equilibrium. Remark:1
+			- survival function:  S(age) = (exp(-beta * age) - alpha)/(1-alpha)
+			- life expectency: 1.0/beta + (alpha * log(alpha) )/ ( (1.0-alpha)*beta)
+			- optional: constant birth rate with constant pop size: 1.0/life_expectency (see [2])
+		2) We divert from [1], by_ 
+		2a) adjusting the setting to a discrete time scenario, 
+		   as in [2]
+		2b) Providing explicit sex, with a fixed chance of 50% to be female or male. 
+		2c) As in [2], assume a constant birth rate as default.
+
+	C) Remarks
+		1) The fertility rate and death probabilites can be seen as "under ideal 
+			 circumstances", i.e. it is possible to include other causes of death 
+			 (like nutrition, migration) or birth (like migration) or skipped birth 
+			 (like no suitable parents to be found). This should be directly in LSD, 
+			 i.e. "the model". You may "kill" an agent out of the standard procedrue
+			 by calling the function "Pop_agent_death" via fake-caller, passing as 
+			 fake-caller the agent to be deleted.
+		2) If more than one society or group shall be present, this is best 
+  		 implemented in the "Init_New_Agent". For example, it could be decided
+  		 probabilistically to which group a new agent belongs.
+				
+Literature mentioned:			
+[1]: Boucekkine, Raouf; La Croix, David de; Licandro, Omar (2002): Vintage Human Capital, Demographic Trends, and Endogenous Growth. In Journal of Economic Theory 104 (2), pp. 340–375. DOI: 10.1006/jeth.2001.2854.			
+[2]: Kaminski, Bogumil.; Growiec, Katarzyna; Growiec, Jakub (2017): A Dynamic Model of Social Capital and Economic Performance in Social Networks. In : Social Simulation Conference 2017, Dublin.
+
+
+
+(PRESS CTRL+E TO EDIT USER EQUATIONS)
+

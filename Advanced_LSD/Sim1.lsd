@@ -1,0 +1,784 @@
+	
+Label Root
+{
+	Son: Pop_Model
+	Label Pop_Model
+	{
+		Var: Pop_age
+		Var: Pop_birth
+		Var: Pop_birth_rate
+		Var: Pop_death
+		Var: Pop_init
+		Func: Pop_agent_birth
+		Func: Pop_agent_death
+		Param: Pop_alpha
+		Param: Pop_beta
+		Param: Pop_const_n
+
+	}
+
+	Son: Agent
+	Label Agent
+	{
+		Son: Acquaintance
+		Label Acquaintance
+		{
+			Param: Acquaintance_ID
+			Param: Acquaintance_fd
+			Param: Acquaintance_td
+
+		}
+
+		Param: Agent_ID
+		Param: Agent_age
+		Param: Agent_female
+		Param: Agent_death_age
+		Param: Agent_father
+		Param: Agent_mother
+		Param: Agent_type
+		Param: Agent_family
+		Func: type_distance
+		Func: family_distance
+		Var: update_network
+		Func: new_acquaintance
+		Func: update_info
+		Func: delete_acquaintance
+		Param: Agent_degree
+
+	}
+
+	Son: ABMAT
+	Label ABMAT
+	{
+		Var: ABMAT_INIT
+		Var: ABMAT_UPDATE
+
+	}
+
+	Son: GIS_Model
+	Label GIS_Model
+	{
+		Func: Gis_Init
+		Param: xn
+		Param: yn
+		Param: wrap
+
+	}
+
+	Son: Patch
+	Label Patch
+	{
+		Param: Patch_ID
+		Param: Patch_x
+		Param: Patch_y
+
+	}
+
+	Var: Updating_Scheme
+	Param: SA_
+	Func: Delete_Agent
+	Func: Init_New_Agent
+	Var: Init_Global
+	Var: TestAction
+	Param: ageOfMaturaty
+	Var: Update_Pajek_Network
+
+}
+
+
+DATA
+
+Object: Root C	1
+Var: Updating_Scheme 0 n + n n
+Param: SA_ 0 n + n n	0
+Func: Delete_Agent 0 n + n n
+Func: Init_New_Agent 0 n + n n
+Var: Init_Global 0 n + n n
+Var: TestAction 0 n + n n
+Param: ageOfMaturaty 0 n + n n	15
+Var: Update_Pajek_Network 0 n + n n
+
+Object: Pop_Model C	1
+Var: Pop_age 0 s + n p
+Var: Pop_birth 0 s + n n
+Var: Pop_birth_rate 0 n + n n
+Var: Pop_death 0 s + n n
+Var: Pop_init 0 n + n n
+Func: Pop_agent_birth 0 n + n n
+Func: Pop_agent_death 0 n + n n
+Param: Pop_alpha 0 n + n n	5.44
+Param: Pop_beta 0 n + n n	-0.014729
+Param: Pop_const_n 0 s + n n	100
+
+Object: Agent C	1
+Param: Agent_ID 0 n + n n	0
+Param: Agent_age 0 n + n n	0
+Param: Agent_female 0 n + n n	0
+Param: Agent_death_age 0 n + n n	0
+Param: Agent_father 0 n + n n	-1
+Param: Agent_mother 0 n + n n	-1
+Param: Agent_type 0 n + n n	0
+Param: Agent_family 0 n + n n	0
+Func: type_distance 0 n + n n
+Func: family_distance 0 n + n n
+Var: update_network 0 n + n n
+Func: new_acquaintance 0 n + n n
+Func: update_info 0 n + n n
+Func: delete_acquaintance 0 n + n n
+Param: Agent_degree 0 s + n n	0
+
+Object: Acquaintance C	1
+Param: Acquaintance_ID 0 n + n n	-1
+Param: Acquaintance_fd 0 n + n n	0
+Param: Acquaintance_td 0 n + n n	0
+
+Object: ABMAT C	1
+Var: ABMAT_INIT 0 n + n n
+Var: ABMAT_UPDATE 0 n + n n
+
+Object: GIS_Model C	1
+Func: Gis_Init 0 n + n n
+Param: xn 0 n + n n	4
+Param: yn 0 n + n n	4
+Param: wrap 0 n + n n	15
+
+Object: Patch C	1
+Param: Patch_ID 0 n + n n	0
+Param: Patch_x 0 n + n n	0
+Param: Patch_y 0 n + n n	0
+
+SIM_NUM 1
+SEED 3
+MAX_STEP 100
+EQUATION fun_templ_advancedLSD.cpp
+MODELREPORT report_Sim1.html
+
+DESCRIPTION
+
+Object_Root
+(no description available)
+END_DESCRIPTION
+
+Variable_Updating_Scheme
+ Controls the flow of events at any single simulation tick. This should always
+   be the first equation called in any model! 
+'Updating_Scheme' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_SA_
+A parameter to allow SA (no meaning for the theory)
+_INIT_
+
+END_DESCRIPTION
+
+Function_Delete_Agent
+ This FUNCTION is called via fake_caller when an agent dies.
+   It is called from the population modul, whenever an agent dies (before it
+   is removed).
+   The user can provide content for the dying agent (caller pointer c) 
+'Delete_Agent' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Function_Init_New_Agent
+ This FUNCTION is called via fake_caller and initialises the new agent.
+   It is called from the population modul, whenever a new agent is created
+   (after it has been added).
+   The user can provide content for the new agent (caller pointer c) 
+'Init_New_Agent' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Init_Global
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_TestAction
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_ageOfMaturaty
+Age when an agent enters "the market"
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Update_Pajek_Network
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Object_Pop_Model
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Pop_age
+'Pop_age' appears in the equation for: Updating_Scheme
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Pop_birth
+'Pop_birth' appears in the equation for: Updating_Scheme
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Pop_birth_rate
+'Pop_birth_rate' appears in the equation for: NewGeneration
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Pop_death
+'Pop_death' appears in the equation for: Updating_Scheme
+_INIT_
+
+END_DESCRIPTION
+
+Variable_Pop_init
+'Pop_init' appears in the equation for: Updating_Scheme
+_INIT_
+
+END_DESCRIPTION
+
+Function_Pop_agent_birth
+'Pop_agent_birth' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Function_Pop_agent_death
+'Pop_agent_death' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Pop_alpha
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Pop_beta
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Pop_const_n
+If == 0, the population model will not generate new agents.
+
+If > 0, the population model will generate Pop_const_n * birth_rate agents (if birth_rate is a variable, the birth rate is constant and equal to 1/exp_life * Pop_const_n)
+
+If < 0, new generation is birth_rate * current n agents alive.
+_INIT_
+
+END_DESCRIPTION
+
+Object_Agent
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_ID
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_age
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_female
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_death_age
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_father
+Holds the ID of the father
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_mother
+Holds the ID of the mother
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_type
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_family
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Function_type_distance
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Function_family_distance
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_update_network
+Action to update the network structure. This is a black-box model of interaction.
+_INIT_
+
+END_DESCRIPTION
+
+Function_new_acquaintance
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Function_update_info
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Function_delete_acquaintance
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Agent_degree
+Number of social ties
+_INIT_
+
+END_DESCRIPTION
+
+Object_Acquaintance
+Each agent is connected to other agents, its acquaintances.
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Acquaintance_ID
+The ID of the corresponding agent
+_INIT_
+All 1 instances equal to 0.
+END_DESCRIPTION
+
+Parameter_Acquaintance_fd
+Family distance (as last calculated! There is not always an update.)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Acquaintance_td
+Type distance (as last calculated! There is not always an update.)
+_INIT_
+
+END_DESCRIPTION
+
+Object_ABMAT
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_ABMAT_INIT
+'ABMAT_INIT' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Variable_ABMAT_UPDATE
+'ABMAT_UPDATE' appears in the equation for: (never used)
+_INIT_
+
+END_DESCRIPTION
+
+Object_GIS_Model
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Function_Gis_Init
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_xn
+x dimension size
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_yn
+y dimension size
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_wrap
+ wrapping: there are 2^4 options. We use a bit-code (0=off):
+    0-bit: left     : 0=0 1=1
+    1-bit: right    : 0=0 1=2
+    2-bit: top      : 0=0 1=4
+    3-bit: bottom   : 0=0 1=8
+
+    Simply sum up the options selected and pass this as argument.
+_INIT_
+
+END_DESCRIPTION
+
+Object_Patch
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Patch_ID
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Patch_x
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_Patch_y
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+
+DOCUOBSERVE
+
+END_DOCUOBSERVE
+
+
+DOCUINITIAL
+
+END_DOCUINITIAL
+
+
+EQ_FILE
+#include <random>    //else potential problems with _abs()
+#include "fun_head_fast.h"
+/******************************************************************************/
+/*          A B M A T                                                         */
+/*  The Design of Experiment. The Design Point Matrixes                       */
+/*  need to be linked here, to be selected via LSD-Browser.                   */
+/*  The Names of the Design are used for Folder Creation                      */
+/*  and Data saving issues.                                                   */
+/* -------------------------------------------------------------------------- */
+  #define ABMAT_ANALYSIS_CFG_PATH "DOE/ABMAT_Analysis.cfg" //Define where the Analysis.cfg lies. There locations of Analysis tsv files, indicating which variables to report and how, are provided.
+  //#define ABMAT_DPM_CFG_PATH "DOE/ABMAT_DPM.cfg" //Define where the Design Point Matrix lies.
+  #define ABMAT_INTERVALS_CFG_PATH "DOE/ABMAT_Intervals.cfg" //Define where the Intervals cfg lies.
+  
+  //#define ABMAT_USE_DOE
+  #define ABMAT_USE_ANALYSIS                               
+  #include "external/ABMAT/ABMAT_head.h"  //load the Analysis Toolkit
+  
+  /* Also load a balpha distribution from  
+    https://stackoverflow.com/a/15166623/3895476 
+    also: (this version) https://gist.github.com/sftrabbit/5068941
+  */
+  //#include "files/balpha_distribution/balpha_distribution.hpp"
+
+// #include <vector>
+// #include <tuple>
+// #include <string>
+// #include <algorithm>
+//
+
+
+
+
+
+/********************************************************/
+/* To clearly mark tests and also allow to not run them */
+#define MY_END_EQUATION( X )  return X
+//#define TEST_IN(X) if (true && (X) ) {   //Testing on              //
+#define TEST_IN(X) if (false && X) {  //Testing off           //
+#define TEST_OUT }                                      //
+                                                        //
+//#define VERBOSE_IN(X) if (true && (X) ) {                          //
+#define VERBOSE_IN(X) if (false && X) {                       //
+#define VERBOSE_OUT }                                   //
+/********************************************************/
+
+/********************************************************/
+/* Some pure c/c++ helpers                              */
+
+#include "backend_population.cpp" //the backend for heritage network information
+
+/* For the Kaminski population model */
+const int age_of_maturaty = 14;
+const int age_parents[2] = {18,35}; //improve later
+/*+++++++++++++++++++++++++++++++++++*/
+
+MODELBEGIN
+
+#include "external/ABMAT/ABMAT_LSD.cpp" //load the ABMAT equations
+
+/*----------------------------------------------------------------------------*/
+/*           General Helpers                                                  */
+/*----------------------------------------------------------------------------*/
+
+EQUATION("Updating_Scheme")
+if (t==1){
+V("Pop_init");
+}
+
+/* Before all else, the population is updated */
+V("Pop_death");
+V("Pop_birth");
+V("Pop_age");
+
+
+
+RESULT(0.0)
+
+
+/*----------------------------------------------------------------------------*/
+/*           Population Model, following [1,2]                                */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    In LSD Model, provide an object "Population" which holds the following:
+    Pop_init    Equation
+    Pop_alpha   alpha value
+    Pop_beta    beta value
+
+
+
+/*----------------------------------------------------------------------------*/
+
+
+/*++++++++++++++++++++++
+    Generic Part
+    +++++++++++++++++++++++*/
+
+EQUATION("Pop_init")
+/* Initialise the population model */
+
+  /* Init external backend */
+  ADDEXT(ext_pop);
+  object* agent_blueprint = SEARCHS(p->up,"Agent");
+  //Pass info of object holding the Pop-equations, seed, object holding agents.
+  P_EXT(ext_pop)->pop_init(p,seed,agent_blueprint->up,V("Pop_alpha"),V("Pop_beta") ); //using LSD seed for internal prng,
+  /*------*/
+
+  /* Initialise the discretised survival function.
+  The survival function follows Kaminski et. al. 2017
+  */
+  double beta = V("Pop_beta");
+  double alpha = V("Pop_alpha");
+
+                        TEST_IN(beta >= 0)
+                        	PLOG("\nError: beta >= 0");
+                        	quit = 1;MY_END_EQUATION(0.0);
+                        TEST_OUT
+                        TEST_IN(alpha <= 1)
+                        	PLOG("\nError: alpha <= 0");
+                        	quit = 1;MY_END_EQUATION(0.0);
+                        TEST_OUT
+
+
+
+  /*------*/
+
+  /* Initialise the population and the population statistics
+
+  - Create n_agent agents.
+  - Create distribution of agent-age
+  - Assign agent-age (perfect corr of ID and Age)
+  - Assign parents (not perfect, but rough)
+  ...
+
+
+  */
+
+  int n_agent = int(V("n_agent"));
+  double birth_rate = V("Pop_birth_rate");  //exogeneous, fixed birth rate
+
+  //Realocate the vector holding the pointers for each agent ever existed in order to be sufficiently big for the whole run.
+  int max_expected_entries = n_agent + birth_rate*double(n_agent)*double(max_step)*1.05; //extra 5%
+  P_EXT(ext_pop)->expected_total(max_expected_entries);
+
+  //Add missing agents.
+  for (int i=0; i< n_agent; i++){ V_CHEAT("Pop_agent_birth",p->up); }
+  //And delete the blueprint, which is not linked to the backend
+  DELETE(agent_blueprint);
+
+  /*++++++++++++++++++++++++++++++++++++++++++++*/
+  /*    Initialise the age-structure
+
+    We can initialise the initial age structure proportional to the survival
+    rates by assigning each agent a random uniform value within 0,1.
+
+    The number of agents
+  */
+
+    std::vector <int> age =  P_EXT(ext_pop)->pop_init_age_dist(V("n_agent"));
+
+    //Assign age to agents
+    int cur_age_idx = age.size();
+    CYCLES(p->up,cur1,"Agent"){
+
+                                  TEST_IN(cur_age_idx<1)
+                                    PLOG("\nError! See line 181 in fun_templ..");
+                                    break;
+                                  TEST_OUT
+
+      WRITES(cur1,"age", age.at(--cur_age_idx) ); //add age and increase i afterwards
+    }
+  /*--------------------------------------------*/
+
+  /* What about relations? How to initialise a heritage network? */
+  //to do,
+
+PARAMETER
+RESULT(0)
+
+FUNCTION("Pop_agent_death")
+/* Delete the provided (via FAKE CALLER) agent.*/
+
+                    TEST_IN(std::string(c->label)!=std::string("Agent"))
+                      PLOG("\nError! Trying to delete %s which is not of type %s",c->label,"Agent");
+                    TEST_OUT
+  P_EXT(ext_pop)->agentDies(VS(c,"ID"));
+  DELETE(c); //delete the caller.
+
+RESULT(0)
+
+FUNCTION("Pop_agent_birth")
+/* Create a new agent. FAKE CALLER tells where. */
+
+  cur=ADDOBJS(c,"Agent");
+  ext_pop_agent*  agent_ext = P_EXT(ext_pop)->newAgent(cur);
+  WRITES(cur,"ID",agent_ext->ID);
+  WRITES(cur,"age",0);
+  WRITES(cur,"female",agent_ext->female); //will be 0 for male, 1 for female.
+  WRITES(cur,"death_age",agent_ext->death_age); //Already, it is decided when the agent will die (at least)
+
+  if (t==1){
+    //Initialisation
+  } else {
+    //After initialisation
+
+  /* Model specific */
+    //Get parents
+    //get initial NW
+    //stuff
+  /*----------------*/
+  }
+RESULT(0)
+
+EQUATION("Pop_death")
+/* Check which agents need to be deleted and call "Pop_agent_death" for each one
+*/
+
+  CYCLES(p->up,cur,"Agent"){
+    if ( VS(cur,"age") >= VS(cur,"death_age")  ) {
+      V_CHEAT("Pop_agent_death",cur);
+    }
+  }
+
+RESULT(0)
+
+EQUATION("Pop_birth")
+/* Model the population process and create the necessary agents. */
+  int newborn = 0; //number of newborn, needs to be initialised.
+
+  /* Following Kaminski et. al. 2017 there is a fixed birth rate */
+  newborn = int( V("birth_rate") * V("n_agent") + pop_uniform() ); //n_agent_all + uniform(0,1) ); //add uniform to round up/down randomly.
+  /*-----------------------*/
+
+  /* General spawn process */
+  for (int i=0; i< newborn; i++){
+    V_CHEAT("Pop_agent_birth",p->up);
+  }
+  /*-----------------------*/
+
+RESULT(double(newborn))
+
+EQUATION("Pop_age")
+/* Each agents get older one year. */
+  CYCLES(p->up,cur,"Agent"){
+    INCRS(cur,"age",1.0);
+  }
+RESULT(0)
+
+EQUATION("Pop_birth_rate")
+/* Following [2], assume a constant birth rate. */
+
+double birth_rate = 1.0 / P_EXT(ext_pop)->expected_death;
+
+                              VERBOSE_IN(true)
+                              PLOG("\nExpected death with age %g",P_EXT(ext_pop)->expected_death);
+                              PLOG("\nConstant population birth_rate is %g",birth_rate);
+                              VERBOSE_OUT
+
+PARAMETER
+RESULT(birth_rate)
+
+/*----------------------------------------------------------------------------/*
+
+/* Theory specific below */
+
+
+
+
+
+
+
+
+
+
+MODELEND
+
+
+
+
+void close_sim(void)
+{
+
+}
+
+
+
+END_EQ_FILE
