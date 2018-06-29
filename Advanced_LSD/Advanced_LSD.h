@@ -36,14 +36,21 @@ It must be compiled AFTER the other modules have been compiled.
 
 /* We use the FUNCTION keyword to visually mark the difference between
   Equations (updated once per time-step) and Functions (updated whenever called)
+  within the source code. Obviously the real difference is defined in the
+  LSD Browser.
 */
 #ifndef FUNCTION
   #define FUNCTION EQUATION
 #endif
 
+/* Same as ADDEXT but without dealocation. This should allow to call class initialisers (?)*/
 #define ADDEXT2( CLASS ) { p->cext = reinterpret_cast< void * >( new CLASS ); }
 #define ADDEXT2S( PTR, CLASS ) { PTR->cext = reinterpret_cast< void * >( new CLASS ); }
 
+/*Mark the variable hosted in the pointed object as PARAMETER*/
+#ifndef PARAMETERS
+  #define PARAMETERS(obj,label) obj->search_var(obj,label,false)->param = 1;
+#endif
 
 /*----------------------------*/
 
@@ -65,6 +72,10 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 #ifndef BACKEND_PATCH
   #define BACKEND_PATCH "Patch"
 #endif
+
+#include <random>    //else potential problems with _abs()
+#include <Eigen/Eigen>
+#include "fun_head_fast.h"
 
 #include "tools/debug.h"
 #include "Advanced_LSD.cpp" //some general helpers for the backends

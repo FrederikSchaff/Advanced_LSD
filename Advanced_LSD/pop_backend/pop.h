@@ -65,6 +65,14 @@ struct ext_pop_agent {
     std::vector <ext_pop_agent*> children;
     double death_age; //Age of death
 
+    //perhaps in the future... for now everything via LSD to keep the package light
+//     #ifdef MODULE_GEOGRAPHY
+//       ext_gis_patch* ext_location = NULL; //link to patch at gis level
+//              object* lsd_location = NULL; //link to patch as LSD object
+//       ext_gis* gis_counterpart = NULL; //link to the gis class instance
+//
+//     #endif
+
     //to do: Pointer to own pos. in randomised and by age queue, to improve performance?
 };
 
@@ -162,19 +170,50 @@ class ext_pop {
    b) set y to current agent pointer
 */
 
-#define POP_RCYCLE_AGENTS(x,y) \
-  for (P_EXTS(x,ext_pop)->shuffle_random_agents(),  \
+#define POP_RCYCLE_AGENTS(ext_obj,y) \
+  for (P_EXTS(ext_obj,ext_pop)->shuffle_random_agents(),  \
        P_EXTS(p->hook,ext_pop)->it_random_agents_alive=std::begin(P_EXTS(p->hook,ext_pop)->random_agents_alive), \
        y=*(P_EXTS(p->hook,ext_pop)->it_random_agents_alive); \
        P_EXTS(p->hook,ext_pop)->it_random_agents_alive!=std::end(P_EXTS(p->hook,ext_pop)->random_agents_alive); \
        P_EXTS(p->hook,ext_pop)->it_random_agents_alive++, \
        y=*(P_EXTS(p->hook,ext_pop)->it_random_agents_alive) )
-// #define POP_RCYCLE_AGENT(y) POP_RCYCLE_AGENT(p,y)
+//#define POP_RCYCLE_AGENT(y) POP_RCYCLE_AGENT(p,y)
 
 //Return the pointer to the living agent with ID or NULL if it does not exist.
-#define POP_GET_AGENTS(x,ID) \
-  P_EXTS(x,ext_pop)->getAgent((int)ID,true)
+#define POP_GET_AGENTS(ext_obj,ID) P_EXTS(ext_obj,ext_pop)->getAgent((int)ID,true)
+#define POP_GET_AGENT(ID) POP_GET_AGENTS(SEARCHS(root,"Pop_Model"),ID)
 
-#define POP_GET_AGENT(ID) \
-  POP_GET_AGENTS(SEARCHS(root,"Pop_Model"),ID)
+//Return pointer to living agents ext_pop_agent record or NULL if it is dead / does not exist
+#define POP_GET_AGENT_EXTS(ext_obj,ID) P_EXTS(ext_obj,ext_pop)->getAgentExt(ID,true)
+#define POP_GET_AGENT_EXT(ID) POP_GET_AGENT_EXTS(SEARCHS(root,"Pop_Model"),ID)
+
+//Return random agents in live intervall and with gender as specified
+
+  //Multipurpose
+#define POP_GET_RAGENTAXS(ext_obj,gender,min_age,max_age) \
+P_EXTS(ext_obj,ext_pop)->getRandomAgent(0, (int) min_age, (int) max_age)
+#define POP_GET_RAGENTAX(gender,min_age,max_age) POP_GET_RAGENTAXS(SEARCHS(root,"Pop_Model"),gender,min_age,max_age)
+
+
+//Any gender
+#define POP_GET_RAGENTAS(ext_obj,min_age,max_age) POP_GET_RAGENTXS(ext_obj,0,min_age,max_age)
+#define POP_GET_RAGENTA(min_age,max_age) POP_GET_RAGENTX(0,min_age,max_age)
+  //and any age
+#define POP_GET_RAGENTS(ext_obj) POP_GET_RAGENTAXS(ext_obj,0,-1,-1)
+#define POP_GET_RAGENT POP_GET_RAGENTAX(0,-1,-1)
+
+
+//Female
+#define POP_GET_RAGENTAFS(ext_obj,min_age,max_age) POP_GET_RAGENTAXS(ext_obj,1,min_age,max_age)
+#define POP_GET_RAGENTAF(min_age,max_age) POP_GET_RAGENTAX(1,min_age,max_age)
+  //and any age
+#define POP_GET_RAGENTFS(ext_obj) POP_GET_RAGENTXS(ext_obj,1,-1,-1)
+#define POP_GET_RAGENTF POP_GET_RAGENTX(1,-1,-1)
+
+//Male
+#define POP_GET_RAGENTAMS(ext_obj,min_age,max_age) POP_GET_RAGENTAXS(ext_obj,2,min_age,max_age)
+#define POP_GET_RAGENTAM(min_age,max_age) POP_GET_RAGENTAX(2,min_age,max_age)
+  //and any age
+#define POP_GET_RAGENTMS(ext_obj) POP_GET_RAGENTAXS(ext_obj,2,-1,-1)
+#define POP_GET_RAGENTM POP_GET_RAGENTAX(2,-1,-1)
 
