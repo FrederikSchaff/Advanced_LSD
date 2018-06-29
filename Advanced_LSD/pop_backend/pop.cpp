@@ -243,8 +243,8 @@ This file contains the core code of the population backend.
         PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Error, min_age %i > max_age %i.",min_age,max_age);
       return NULL;
     }
-    int start = 0;   //oldest person allowed
-    int end = 0;     //youngest person allowed
+    int start = -1;   //oldest person allowed
+    int end = -1;     //youngest person allowed
     for (int indx = 0; indx < byAge_agents_alive.size()-1; indx++) {
       if (byAge_agents_alive.at(indx)->age >max_age){
         start++; //we may end up in an interval that is WRONG, but only if the last candidate is not valid.
@@ -255,8 +255,16 @@ This file contains the core code of the population backend.
         end++;
       }
     }
+    if (end == -1 || start == -1){
+      VERBOSE_IN(true)
+      PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidat. Oldest is %i and youngest %i",
+        byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
+      VERBOSE_OUT
+      return NULL;
+    }
     VERBOSE_IN(true)
-      PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Start: %i (age %i), end: %i (age %i)",start,byAge_agents_alive.at(start)->age,end,byAge_agents_alive.at(end)->age);
+      PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Start: %i (age %i), end: %i (age %i)",
+      start,byAge_agents_alive.at(start)->age,end,byAge_agents_alive.at(end)->age);
     VERBOSE_OUT
     int indx;
     ext_pop_agent* pTemp = NULL;
