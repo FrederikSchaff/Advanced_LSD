@@ -16,7 +16,9 @@ This is only an overview. Inside the main program folder there is another folder
 
 ## Usage 
 
-In order to use it, clone the current version of LSD 7.1 to your desktop and clone the folder 'Advanced_LSD' into the 'Work' folder in LSD. You may then select the model.
+In order to use it, clone the current version of LSD 7.1 to your desktop and clone the folder 'Advanced_LSD' into the 'Work' folder in LSD. You may then select the model.The fun_templ_advancedLSD.cpp can be used as a template. It provides all the utility necessary.
+
+Note: Two libraries, random and eigen, need to be included prior to fun_head_fast.h. Therefore, fun_head_fast.h is also included via Advanced_LSD.h.
 
 ##Misc
 

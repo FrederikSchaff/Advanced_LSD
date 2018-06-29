@@ -1,5 +1,6 @@
-#include <random>    //else potential problems with _abs()
-#include "fun_head_fast.h"
+/* Note: The fun_head.h is included in Advanced_LSD.h, because some libraries
+  need to be included prior to it (random, eigen)
+*/
 
 /********************
  *   Define which Modules to use
