@@ -61,7 +61,9 @@
 #endif
 
 /* GZIP Options */
-#include "zstr/src/zstr.hpp"
+//#include "zstr/src/zstr.hpp"
+//Not yet used. Also, LSD already uses GZIP, so one should be able to use
+//it from LSD
 
 /* Some parameters that have defaults */
 /* global defines */
