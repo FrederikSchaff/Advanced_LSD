@@ -98,6 +98,7 @@ TRACK_SEQUENCE
     int max_expected_entries = n_const + birth_rate*double(n_const)*double(max_step)*1.05; //extra 5%
     P_EXT(ext_pop)->expected_total(max_expected_entries);
   }
+
   /*------*/
 
   /* For all existing agents, create and link backend file  */
@@ -110,6 +111,7 @@ TRACK_SEQUENCE
   }
   /*------*/
 
+
   /*++++++++++++++++++++++++++++++++++++++++++++*/
   /*    Initialise the age-structure
 
@@ -118,10 +120,12 @@ TRACK_SEQUENCE
 
     Remark: We *should* re-initialise the death-age to the conditional one
             Current approach: Those initial agents do not get a death-age,
-            instead we check each year if the die.
+            instead we check each year if the die (AND NOT CORRECTLY).
   */
 
-    std::vector< double > &age =  P_EXT(ext_pop)->pop_init_age_dist();
+    int n_agent = COUNTS(p->up,P_EXT(ext_pop)->agent_label);
+
+    std::vector< double > age =  P_EXT(ext_pop)->pop_init_age_dist(n_agent);
     int cur_age_idx = 0;     //Assign age to agents
     CYCLES(p->up,cur1,P_EXT(ext_pop)->agent_label){
                                   TEST_IN(cur_age_idx>age.size()-1)
@@ -129,7 +133,7 @@ TRACK_SEQUENCE
                                     break;
                                   TEST_OUT
       WRITES(cur1,GET_VAR_LABEL(cur1,"_age"), age.at(cur_age_idx)); //add age
-      P_EXT(ext_pop)->getAgentExt(int(GET_ID(cur1)))->age=age.at(cur_age_idx); //add age to external entry
+      //P_EXT(ext_pop)->getAgentExt(int(GET_ID(cur1)))->age=age.at(cur_age_idx); //add age to external entry
       WRITES(cur1,GET_VAR_LABEL(cur1,"_death_age"), -1 ); //use negative value to indicate that death is decided each single year for the initial population.
       cur_age_idx++;
     }
@@ -163,17 +167,26 @@ Additional conditions are possible, e.g. the availability of suitable parents.
 */
 if (t>1) {TRACK_SEQUENCE} //Only track sequence after initialisation.
 
+  bool initialise_only = false;
   if (std::string(c->label) == std::string(P_EXT(ext_pop)->agent_label)){
     cur = c;  //we are in initialisation mode - agent exists
+    initialise_only = true;
   } else {
     cur=ADDOBJS(c,P_EXT(ext_pop)->agent_label); //we are in creation mode - agent does not yet exist
   }
   ext_pop_agent*  agent_ext = P_EXT(ext_pop)->newAgent(cur);
   int ID = agent_ext->ID;
   WRITES(cur,GET_ID_LABEL(cur),ID);
-  WRITES(cur,GET_VAR_LABEL(cur,"_age"),0); //is the same at agent_ext
+
+  if (!initialise_only) { //in initialisation only mode the agents start with specific ages decided already and saved in the lsd object
+    WRITES(cur,GET_VAR_LABEL(cur,"_age"),0); //is the same at agent_ext initialisation
+    WRITES(cur,GET_VAR_LABEL(cur,"_death_age"),agent_ext->death_age); //Already, it is decided when the agent will die (at least)
+  } else {
+    agent_ext->age = VS(cur,GET_VAR_LABEL(cur,"_age")); //copy age from LSD obj.
+    agent_ext->death_age = VS(cur,GET_VAR_LABEL(cur,"_death_age")); //copy age from LSD obj.
+  }
   WRITES(cur,GET_VAR_LABEL(cur,"_female"),agent_ext->female); //will be 0 for male, 1 for female.
-  WRITES(cur,GET_VAR_LABEL(cur,"_death_age"),agent_ext->death_age); //Already, it is decided when the agent will die (at least)
+
 
   V_CHEATS(p->up,"Init_New_Agent",cur); //User specific action on agent creation
   // User specific action includes the provision of parents

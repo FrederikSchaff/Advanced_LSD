@@ -113,8 +113,7 @@ class ext_pop {
     void pop_init(object* counterpart, char const *_agent_label, int seed, double _alpha, double _beta, int _n_const);
     void pop_survival_init();
     int pop_newborn_death_age();
-    std::vector< double > init_pop_age;
-    std::vector< double > &pop_init_age_dist();
+    std::vector< double > pop_init_age_dist(int n_agent);
     void agents_alive_get_older();
     double unconditional_survival_rate(int age);
     int total();

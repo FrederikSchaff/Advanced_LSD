@@ -354,13 +354,13 @@ This file contains the core code of the population backend.
     return int (- log( pop_uniform() * (1.0-alpha) + alpha ) / beta ); //from solving m(a) for a. +1 because you die AFTER having
   }
 
-  std::vector<double> &ext_pop::pop_init_age_dist(){
+  std::vector<double> ext_pop::pop_init_age_dist(int n_agent){
     /* Provide a random initial age-structure that matches the long-run statistics
        0: initial age
        1: age of death
     */
     //random distribution
-    int n_agent = byAge_agents_alive.size();
+    std::vector<double> init_pop_age;
     init_pop_age.reserve(n_agent);
     //std::vector <std::pair<int,int> > age_out; age_out.reserve(n_agent);
     for (int i = 0; i< n_agent; i++){ init_pop_age.push_back(pop_uniform()); }
