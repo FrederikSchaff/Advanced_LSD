@@ -191,7 +191,7 @@ class ext_pop {
 
   //Multipurpose
 #define POP_GET_RAGENTAXS(ext_obj,gender,min_age,max_age) \
-P_EXTS(ext_obj,ext_pop)->getRandomAgent(0, (int) min_age, (int) max_age)
+P_EXTS(ext_obj,ext_pop)->getRandomAgent(gender, (int) min_age, (int) max_age)
 #define POP_GET_RAGENTAX(gender,min_age,max_age) POP_GET_RAGENTAXS(SEARCHS(root,"Pop_Model"),gender,min_age,max_age)
 
 
