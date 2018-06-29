@@ -185,7 +185,7 @@ namespace LSD_VALIDATE {
       sprintf(buffer,"\n%-40s -> %-32s called by %s","'Object'","'Variable'","'Calling Object'" );
       PLOG(buffer);
     }
-    PLOG("%s",track_source(p,c,var,has_id).c_str());
+    PLOG("%s\n",track_source(p,c,var,has_id).c_str());
   }
 }
 
