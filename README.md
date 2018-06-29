@@ -31,3 +31,9 @@ Actually there is a lot of potential improvement and things that are currently g
 - [ ] Change all the backends to a MACRO structure, such that they become easier to use and the usage can be documented easier. Also, this way the usage is more in line with standard LSD usage.
 - [ ] Update the pajek backend to STL container usage and make it dynamic.
 
+## Note on the License
+
+I do not know much about licensing so it might be good to declare the intentions here. The file 'fun_templ_advancedLSD.cpp' is only a template showing how the Advanced_LSD tools can be linked to ones own model. Obviously, the model of anybody using this project shall not fall under the GPL. The same holds for other files in the main folder. The real "content" of this project resides in the subfolder Advanced_LSD (including, e.g., Advanced_LSD.h). The license only applies to this folder.
+
+I chose the GPL license because LSD is also licensed under GPL.
+
