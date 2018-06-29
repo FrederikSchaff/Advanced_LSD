@@ -237,7 +237,7 @@ This file contains the core code of the population backend.
     To do: more efficient procedure if many calls. (and without chance to select twice the same)
   */
     VERBOSE_IN(true)
-      PLOG("\nPopulation Model :   getRandomAgentExtAliveAge() called with gender %s, min_age %i and max_age %i",gender==1?"female":(gender==2?"male":"unspecified"),min_age,max_age);
+      PLOG("\n\nPopulation Model :   getRandomAgentExtAliveAge() called with gender %s, min_age %i and max_age %i",gender==1?"female":(gender==2?"male":"unspecified"),min_age,max_age);
     VERBOSE_OUT
     if (min_age > max_age){
         PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Error, min_age %i > max_age %i.",min_age,max_age);
@@ -246,10 +246,10 @@ This file contains the core code of the population backend.
     int start = -1;   //oldest person allowed
     int end = -1;     //youngest person allowed
     for (int indx = 0; indx < byAge_agents_alive.size()-1; indx++) {
-      if (byAge_agents_alive.at(indx)->age >max_age){
+      if (byAge_agents_alive.at(indx)->age > max_age){
         start++; //we may end up in an interval that is WRONG, but only if the last candidate is not valid.
       }
-      if (byAge_agents_alive.at(indx+1)->age<min_age){
+      if (byAge_agents_alive.at(indx)->age<min_age){
         break; //we may end up in an intervals that is WRONG, but only if the first candidate is not valid,either.
       } else {
         end++;
