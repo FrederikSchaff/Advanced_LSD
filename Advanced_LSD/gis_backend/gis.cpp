@@ -432,3 +432,76 @@ bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
   }
   return false; //Obj was not associated to patch
 }
+
+ext_gis_coords ext_gis::random_position(){ //produce a random position on the lattice
+  return ext_gis_coords(random_x(),random_y() );
+}
+int ext_gis::random_y(){ //produce a random position on the lattice
+  return uniform_int(0,yn-1);
+};
+int ext_gis::random_x(){ //produce a random position on the lattice
+  return uniform_int(0,xn-1);
+};
+
+ext_gis_patch* ext_gis::get_patch_at(int x, int y){
+  if (x >= 0 && x < xn && y>=0 && y < yn ){
+    return &patches.at(x).at(y);
+  } else {
+    PLOG("\nGeography Model :   ext:gis::get_patch_at : Dimensions supplied are wrong. (%i,%i) is outside of boundary 0 <= y < %i and 0 <= x <= %i!",x,y,xn,yn);
+    return NULL;
+  }
+}
+
+bool ext_gis::LSD_obj_pos_init(object* LSD_obj, int x, int y){
+  if (x==-1){
+    x=random_x();
+  }
+  if (y==-1){
+    y=random_y();
+  }
+  ext_gis_patch* ptr_GIS_patch = get_patch_at(x,y);
+  if (ptr_GIS_patch == NULL){
+    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_init : There is no such patch!");
+    return false; //this patch does not exist
+  } else { //add LSD obj.
+    ptr_GIS_patch->add_LSD_agent(LSD_obj);
+    return true;
+  }
+}
+
+bool ext_gis::LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x_new, int y_new){
+  ext_gis_patch* ptr_GIS_patch_orig = get_patch_at(x_orig,y_orig);
+  if (x_new==-1){
+    x_new=random_x();
+  }
+  if (y_new==-1){
+    y_new=random_y();
+  }
+  ext_gis_patch* ptr_GIS_patch_new = get_patch_at(x_new,y_new);
+  if (ptr_GIS_patch_orig == NULL){
+    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : Origin not found!");
+    return false; //this patch does not exist
+  } else if (ptr_GIS_patch_new == NULL){
+    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : New Pos not found!");
+    return false; //this patch does not exist
+  } else {
+    if (! ptr_GIS_patch_orig->remove_LSD_agent(LSD_obj)){ //remove and check if success
+      PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : could not remove old association!");
+      return false;
+    } else {
+      ptr_GIS_patch_new->add_LSD_agent(LSD_obj);
+      return true;
+    }
+  }
+}
+
+bool ext_gis::LSD_obj_pos_remove(int x, int y, object* LSD_obj){
+    ext_gis_patch* ptr_GIS_patch = get_patch_at(x,y);
+    if (! ptr_GIS_patch->remove_LSD_agent(LSD_obj)){ //remove and check if success
+      PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : could not remove the association!");
+      return false;
+    } else {
+      return true;
+    }
+}
+

@@ -41,7 +41,7 @@ It also includes the other core-code files (all not fun_*)
 #include <algorithm>
 #include <functional>
 
-//#include <random>    //needs to be before fun_head...? - problems with abs() def.
+//#include <random>    //use LSD random number generator
 
 struct ext_gis_coords{
   int x,y;
@@ -92,15 +92,28 @@ class ext_gis {
     int xn,yn; //size of lattice
     std::vector<std::vector<ext_gis_patch>>  patches;
 
+    ext_gis_patch* get_patch_at(int x, int y); //if it doesn't exist returns NULL
+
     object* LSD_by_coords(int x, int y); //returns the corresponding LSD patch, if it exists
     object* LSD_by_coords(ext_gis_coords); //returns the corresponding LSD patch, if it exists
 
     ext_gis(object* counterpart, char const *_patch_label, int xn, int yn, int wrap);
     ext_gis_patch* newPatch(object* LSD_Patch);
 
+    ext_gis_coords random_position(); //produce a random position on the lattice
+    int random_x(); //produce a random position on the lattice
+    int random_y(); //produce a random position on the lattice
+
+    //utilities to move through patches
     ext_gis_patch* move_single(ext_gis_patch* pos, char direction); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
     ext_gis_patch* move(ext_gis_patch* pos, const std::string& direction, bool complete=false); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
     object* move_LSD(int x, int y, const std::string& direction, bool complete=false); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
+
+    //utilities to associate LSD objects with patches (other than LSD_Patch)
+    //default new pos is randomised
+    bool LSD_obj_pos_init(object* LSD_obj,int x=-1, int y=-1);
+    bool LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x_new=-1, int y_new=-1);
+    bool LSD_obj_pos_remove(int x, int y, object* LSD_obj);
 };
 //Initialise statics
 //   ext_gis::LSD_counterpart = NULL;
@@ -178,6 +191,25 @@ double geo_distance(ext_gis_coords a, ext_gis_coords b);
 //Iterate through complete list of patches in ext obj
 #define GIS_IT_PATCHS(o,name) ext_gis_patch* name = &(P_EXTS(o,ext_gis)->patches.at(0).at(0))
 #define GIS_IT_PATCH(name) GIS_IT_PATCHS(p,name)
+
+
+//Macros to associate LSD agent objects with patches and move them in space (beam)
+#define GIS_ASSOC_INITS(gis_obj,obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )
+#define GIS_ASSOC_INIT(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )
+
+#define GIS_ASSOC_MOVES(gis_obj,obj,x_orig,y_orig,x_new,y_new) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_move( (int)x_orig, (int)y_orig, obj, (int)x_new, (int)y_new )
+#define GIS_ASSOC_MOVE(obj,x_orig,y_orig,x_new,y_new) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_move( (int)x_orig, (int)y_orig, obj, (int)x_new, (int)y_new )
+
+#define GIS_ASSOC_REMOVES(gis_obj,obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_remove( (int)x, (int)y, obj )
+#define GIS_ASSOC_REMOVE(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_remove( (int)x, (int)y, obj)
+
+#define GIS_ASSOC_INITRS(gis_obj,obj) GIS_ASSOC_INITS(gis_obj,obj,-1,-1)
+#define GIS_ASSOC_INITR(obj) GIS_ASSOC_INIT(obj,-1,-1)
+
+#define GIS_ASSOC_MOVERS(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVES(gis_obj,obj,x_orig,y_orig,-1,-1)
+#define GIS_ASSOC_MOVER(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVE(obj,x_orig,y_orig,-1,-1)
+
+
 
 //to do: MOVE MACROS
 
