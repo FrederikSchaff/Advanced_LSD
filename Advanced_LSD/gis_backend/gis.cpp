@@ -418,3 +418,17 @@ ext_gis_coords::ext_gis_coords(int _x, int _y, double _distance){
   y = _y;
   distance = _distance;
 }
+
+void ext_gis_patch::add_LSD_agent(object* obj_to_add){
+  LSD_agents.push_back(obj_to_add);
+}
+
+bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
+  for (int i=0; i<=LSD_agents.size();i++){
+    if (LSD_agents[i] == obj_to_remove){
+      LSD_agents.erase(LSD_agents.begin()+i);
+      return true;
+    }
+  }
+  return false; //Obj was not associated to patch
+}

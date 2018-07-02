@@ -49,7 +49,7 @@ struct ext_gis_coords{
   ext_gis_coords(int x=-1, int y=-1, double distance=-1.0); //constructor
 };
 
-struct ext_gis_patch {
+class ext_gis_patch {
   public:
     /*generic*/
     object* LSD_counterpart = NULL; //Link to LSD object holding this external object
@@ -66,6 +66,8 @@ struct ext_gis_patch {
     ext_gis_patch* next = NULL; //treat as one-dim row.
 
     std::vector<object*> LSD_agents; //link to LSD objects that reside at the current patch.
+    bool remove_LSD_agent(object* obj_to_remove);
+    void add_LSD_agent(object* obj_to_add);
 
 };
 
