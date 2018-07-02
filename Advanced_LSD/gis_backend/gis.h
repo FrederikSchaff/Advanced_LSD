@@ -111,9 +111,10 @@ class ext_gis {
 
     //utilities to associate LSD objects with patches (other than LSD_Patch)
     //default new pos is randomised
-    bool LSD_obj_pos_init(object* LSD_obj,int x=-1, int y=-1);
-    bool LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x_new=-1, int y_new=-1);
-    bool LSD_obj_pos_remove(int x, int y, object* LSD_obj);
+    //returns LSD Patch object associated with position
+    object* LSD_obj_pos_init(object* LSD_obj,int x=-1, int y=-1);
+    object* LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x_new=-1, int y_new=-1);
+    object* LSD_obj_pos_remove(int x, int y, object* LSD_obj);
 };
 //Initialise statics
 //   ext_gis::LSD_counterpart = NULL;
