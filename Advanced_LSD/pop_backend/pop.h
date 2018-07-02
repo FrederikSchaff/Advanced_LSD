@@ -65,13 +65,6 @@ struct ext_pop_agent {
     std::vector <ext_pop_agent*> children;
     double death_age; //Age of death
 
-    //perhaps in the future... for now everything via LSD to keep the package light
-//     #ifdef MODULE_GEOGRAPHY
-//       ext_gis_patch* ext_location = NULL; //link to patch at gis level
-//              object* lsd_location = NULL; //link to patch as LSD object
-//       ext_gis* gis_counterpart = NULL; //link to the gis class instance
-//
-//     #endif
 
     //to do: Pointer to own pos. in randomised and by age queue, to improve performance?
 };
