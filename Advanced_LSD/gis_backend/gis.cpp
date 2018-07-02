@@ -389,6 +389,8 @@ double geo_distance(ext_gis_coords a, ext_gis_coords b){
 
 object* ext_gis_rsearch::next(){
   //a simple iterator through the vector of pointers initialised before
+  //if agents=true is given, provide the list of LSD objects currently linked
+  //to the patch.
   TEST_IN(false)
     PLOG("\nGeography Model :   ext_gis_rsearch::next(): Producing next LSD object.");
     PLOG("\n total options: %i",valid_objects.size());

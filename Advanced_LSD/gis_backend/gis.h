@@ -141,6 +141,10 @@ class ext_gis_rsearch {
 
     object* next(); //provide next LSD patch object in search radius,
                     //or NULL if done
+
+    //Provision to cycle through non-patch objects located in search space by label
+    std::vector<object*>::iterator it_rsearch_labelled_obj;
+
   private:
     //See: https://stackoverflow.com/a/7330341/3895476
     // You may not "delegate" constructors. Cost me a full day or so...
@@ -172,6 +176,13 @@ double geo_distance(ext_gis_coords a, ext_gis_coords b);
 //Iterate through complete list of patches in ext obj
 #define GIS_IT_PATCHS(o,name) ext_gis_patch* name = &(P_EXTS(o,ext_gis)->patches.at(0).at(0))
 #define GIS_IT_PATCH(name) GIS_IT_PATCHS(p,name)
+
+//to do: MOVE MACROS
+
+//to do: SEARCH LSD objects in neighbourhood by label. Wrapper using existing
+//rsearch!
+
+// GIS_
 
 //Macro to search in a given radius around a given position. It provides a CYCLE like behaviour.
 // Create temp search object, initialise the search (define search set), provide iterator through the set
