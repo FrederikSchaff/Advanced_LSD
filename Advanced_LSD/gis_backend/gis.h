@@ -65,6 +65,8 @@ struct ext_gis_patch {
 
     ext_gis_patch* next = NULL; //treat as one-dim row.
 
+    std::vector<object*> LSD_agents; //link to LSD objects that reside at the current patch.
+
 };
 
 /* A class to search a given set of patches in a radious around the origin.
@@ -95,8 +97,8 @@ class ext_gis {
     ext_gis_patch* newPatch(object* LSD_Patch);
 
     ext_gis_patch* move_single(ext_gis_patch* pos, char direction); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
-    ext_gis_patch* move(ext_gis_patch* pos, const std::string& direction); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
-    object* move_LSD(int x, int y, const std::string& direction); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
+    ext_gis_patch* move(ext_gis_patch* pos, const std::string& direction, bool complete=false); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
+    object* move_LSD(int x, int y, const std::string& direction, bool complete=false); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
 };
 //Initialise statics
 //   ext_gis::LSD_counterpart = NULL;

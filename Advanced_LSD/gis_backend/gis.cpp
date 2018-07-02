@@ -140,6 +140,11 @@ This file contains the core code of the population backend.
 
 }
 
+/*
+    Movement.
+*/
+
+//Simply returns the patch in direction, if it exists. Von Neuman lattice.
 ext_gis_patch* ext_gis::move_single(ext_gis_patch* pos, char direction){ //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
   switch (direction) {
 
@@ -160,18 +165,25 @@ ext_gis_patch* ext_gis::move_single(ext_gis_patch* pos, char direction){ //move 
   return NULL;
 }
 
-//moves through a number of steps, as long as it is valid. Stops if no more movement is possible (NULL returned)
-ext_gis_patch* ext_gis::move(ext_gis_patch* pos, const std::string& direction){
+//moves through a number of steps provided as string of characters, as long as it is valid.
+//Stops if no more movement is possible, returning last position in reach (default) or NULL (complete=true)
+ext_gis_patch* ext_gis::move(ext_gis_patch* pos, const std::string& direction, bool complete){
   ext_gis_patch* last_pos;
   for (auto dir : direction){
     last_pos = pos;
     pos = move_single(pos, dir);
-    if (pos==NULL){ return last_pos;}
+    if (pos==NULL){
+      if (!complete){
+        return last_pos; //Part of movement possible
+      } else {
+        return NULL; //Not all movement possible
+      }
+    }
   }
-  return pos;
+  return pos; //All movement possible
 }
 
-object* ext_gis::move_LSD(int x, int y, const std::string& direction){ //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
+object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool complete){ //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
   TEST_IN(true) //Allow turning off for reasons of performance
     if (x<0 || y<0 || x>= xn || y >= yn){
       PLOG("\nGeography Model :   ext_gis::move_LSD(): Error, start position (%i,%i) is out of range",x,y);
@@ -179,9 +191,13 @@ object* ext_gis::move_LSD(int x, int y, const std::string& direction){ //move "u
     }
   TEST_OUT
 
-  ext_gis_patch* newPos = move(&patches.at(x).at(y), direction);
+  ext_gis_patch* newPos = move(&patches.at(x).at(y), direction, complete);
   if (newPos == NULL){ return NULL; } else {return newPos->LSD_counterpart;}
 }
+
+/*
+    Radius Search
+*/
 
 void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
   TEST_IN(true)
