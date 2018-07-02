@@ -110,8 +110,8 @@ class ext_gis {
     object* move_LSD(int x, int y, const std::string& direction, bool complete=false); //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
 
     //utilities to associate LSD objects with patches (other than LSD_Patch)
-    //default new pos is randomised
-    //returns LSD Patch object associated with position
+      //default new pos is randomised
+      //returns LSD Patch object associated with position
     object* LSD_obj_pos_init(object* LSD_obj,int x=-1, int y=-1);
     object* LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x_new=-1, int y_new=-1);
     object* LSD_obj_pos_remove(int x, int y, object* LSD_obj);
@@ -129,6 +129,7 @@ class ext_gis {
 //     using std::vector<ext_gis_coords*>::iterator::iterator;
 //     object* operator*() { return LSD_by_coords(std::vector<ext_gis_coords*>::iterator::operator*()); }
 // };
+
 
 class ext_gis_rsearch {
   //later it shall be a member class of ext_gis.
@@ -155,8 +156,9 @@ class ext_gis_rsearch {
     ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type=0); //each time a new search is started we create a new object.
     ext_gis_rsearch(){}; //default, does not initialise stuff.
 
-    object* next(); //provide next LSD patch object in search radius,
-                    //or NULL if done
+    object* next();  //provide next LSD patch object in search radius,
+                    //or NULL if done.
+
 
     //Provision to cycle through non-patch objects located in search space by label
     std::vector<object*>::iterator it_rsearch_labelled_obj;
@@ -187,32 +189,28 @@ double geo_distance(ext_gis_coords a, ext_gis_coords b);
 
 //Macro to move from a given x,y pos stepwise.
 #define GIS_MOVE(x,y,direction) P_EXTS(SEARCH("GIS_Model"),ext_gis)->move_LSD(x,y,direction)
-#define GIS_MOVES(gis_obj,x,y,direction) P_EXTS(gis_obj,ext_gis)->move_LSD(x,y,direction)
+  #define GIS_MOVES(gis_obj,x,y,direction) P_EXTS(gis_obj,ext_gis)->move_LSD(x,y,direction)
 
 //Iterate through complete list of patches in ext obj
 #define GIS_IT_PATCHS(o,name) ext_gis_patch* name = &(P_EXTS(o,ext_gis)->patches.at(0).at(0))
-#define GIS_IT_PATCH(name) GIS_IT_PATCHS(p,name)
+  #define GIS_IT_PATCH(name) GIS_IT_PATCHS(p,name)
 
 
 //Macros to associate LSD agent objects with patches and move them in space (beam)
 #define GIS_ASSOC_INITS(gis_obj,obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )
-#define GIS_ASSOC_INIT(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )
+  #define GIS_ASSOC_INIT(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )
+#define GIS_ASSOC_INITRS(gis_obj,obj) GIS_ASSOC_INITS(gis_obj,obj,-1,-1)
+  #define GIS_ASSOC_INITR(obj) GIS_ASSOC_INIT(obj,-1,-1)
+
 
 #define GIS_ASSOC_MOVES(gis_obj,obj,x_orig,y_orig,x_new,y_new) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_move( (int)x_orig, (int)y_orig, obj, (int)x_new, (int)y_new )
-#define GIS_ASSOC_MOVE(obj,x_orig,y_orig,x_new,y_new) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_move( (int)x_orig, (int)y_orig, obj, (int)x_new, (int)y_new )
+  #define GIS_ASSOC_MOVE(obj,x_orig,y_orig,x_new,y_new) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_move( (int)x_orig, (int)y_orig, obj, (int)x_new, (int)y_new )
+#define GIS_ASSOC_MOVERS(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVES(gis_obj,obj,x_orig,y_orig,-1,-1)
+  #define GIS_ASSOC_MOVER(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVE(obj,x_orig,y_orig,-1,-1)
 
 #define GIS_ASSOC_REMOVES(gis_obj,obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_remove( (int)x, (int)y, obj )
-#define GIS_ASSOC_REMOVE(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_remove( (int)x, (int)y, obj)
+  #define GIS_ASSOC_REMOVE(obj,x,y) P_EXTS(SEARCH("GIS_Model"),ext_gis)->LSD_obj_pos_remove( (int)x, (int)y, obj)
 
-#define GIS_ASSOC_INITRS(gis_obj,obj) GIS_ASSOC_INITS(gis_obj,obj,-1,-1)
-#define GIS_ASSOC_INITR(obj) GIS_ASSOC_INIT(obj,-1,-1)
-
-#define GIS_ASSOC_MOVERS(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVES(gis_obj,obj,x_orig,y_orig,-1,-1)
-#define GIS_ASSOC_MOVER(gis_obj,obj,x_orig,y_orig) GIS_ASSOC_MOVE(obj,x_orig,y_orig,-1,-1)
-
-
-
-//to do: MOVE MACROS
 
 //to do: SEARCH LSD objects in neighbourhood by label. Wrapper using existing
 //rsearch!

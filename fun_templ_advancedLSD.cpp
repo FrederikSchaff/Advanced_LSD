@@ -80,15 +80,16 @@ TRACK_SEQUENCE
     V("ABMAT_INIT"); //Initialise ABMAT
   #endif
   /* Backend Modules */
+  #ifdef MODULE_GEOGRAPHY
+    cur = SEARCH("Patch"); //we need to define the patch object to which the backend connects.
+    V_CHEAT("Gis_Init",cur); //and then we initialise it.
+  #endif
+
   #ifdef MODULE_POPULATION
     cur = SEARCH("Agent"); //we need to define the Agent object to which the backend connects.
     V_CHEAT("Pop_init",cur); //Initialise the population model
   #endif
 
-  #ifdef MODULE_GEOGRAPHY
-    cur = SEARCH("Patch"); //we need to define the patch object to which the backend connects.
-    V_CHEAT("Gis_Init",cur); //and then we initialise it.
-  #endif
 
   /* Note: Currently only one type of each is possible. But one may modify it
     easily to allow for more instances...
