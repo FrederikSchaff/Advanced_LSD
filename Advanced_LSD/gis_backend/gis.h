@@ -240,3 +240,6 @@ ext_gis_rsearch temp_gis_search_obj;
 
 #define GIS_CYCLE_NEIGHBOURS_SORT(Xobj,x,y,radius) \
   GIS_CYCLE_NEIGHBOURS_SORTS(SEARCH("GIS_Model"),Xobj,x,y,radius)
+
+  //Needed: Iterator like for moving through associated obj with given label
+  //in given neighbourhood.
