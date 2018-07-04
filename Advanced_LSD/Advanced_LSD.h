@@ -74,7 +74,7 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 #endif
 
 #include <random>    //else potential problems with _abs()
-#include <Eigen/Eigen>
+//#include <Eigen/Eigen>
 #include "fun_head_fast.h"
 
 #include "tools/debug.h"
