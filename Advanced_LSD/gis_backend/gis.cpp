@@ -228,7 +228,7 @@ void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _rad
   TEST_OUT
   it_valid  = valid_objects.begin(); //initialise the iterator used in next()
   TEST_IN(valid_objects.size()>0)
-    PLOG("\n First option is %i, %i with %g",it_valid->x,it_valid->y,it_valid->distance);
+    PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance);
   TEST_OUT
 }
 
@@ -420,6 +420,9 @@ ext_gis_coords::ext_gis_coords(int _x, int _y, double _distance){
 }
 
 void ext_gis_patch::add_LSD_agent(object* obj_to_add){
+  VERBOSE_IN(true)
+    PLOG("\nGeography Model :   : ext_gis_patch::add_LSD_agent : Currently there are %i objects at patch w. ID %i. Now adding object %s with ID %g",LSD_agents.size(),ID,obj_to_add->label,GET_ID(obj_to_add));
+  VERBOSE_OUT
   LSD_agents.push_back(obj_to_add);
 }
 

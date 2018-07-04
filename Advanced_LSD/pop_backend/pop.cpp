@@ -138,6 +138,93 @@ This file contains the core code of the population backend.
     }
   }
 
+  //Check if there is potential of incest with given "degree" - only direct biology.
+  // allowed degree: 0 - incest allowed, 1 - siblings, 2 - also parent-child, 3 - also grandchild-grandparent, 4 - also nephew - uncle/aunt, 5 - also cousin - cousin.
+  // we compare be-directional, to also catch if a mother would have a child with a (grand)child.
+  //returns true if there is incest
+  bool ext_pop::check_if_incest(int id_mother, int id_father, int prohibited_degree){
+    if (prohibited_degree == 0){
+      return false; //no prohibited incest.
+    }
+    ext_pop_agent* c_mother = &agents.at(id_mother);
+    ext_pop_agent* c_father = &agents.at(id_father);
+
+    //(half-)siblings?
+    if (c_mother->mother != NULL
+        && (c_mother->mother == c_father->mother || c_mother->father == c_father->father)
+      ){
+      VERBOSE_IN(true)
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : siblings!")
+      VERBOSE_OUT
+      return true;
+
+    } else if (prohibited_degree == 1){
+      return false; //OK
+
+    //parent-child?
+    } else if ( (c_mother->father != NULL && c_mother->father == c_father)
+             || (c_father->mother != NULL && c_father->mother == c_mother)
+      ){
+      VERBOSE_IN(true)
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : parent-child relation!")
+      VERBOSE_OUT
+      return true;
+    } else if (prohibited_degree == 2 ){
+      return false; //OK
+
+    //grandchild-grandparent?
+    } else if (
+      (/* grandchild-grandpas */ (c_mother->father != NULL && c_mother->father->father != NULL && c_mother->father->father == c_father)
+                              || (c_mother->mother != NULL && c_mother->mother->father != NULL && c_mother->mother->father == c_father)
+      ) || (
+       /*grandson-grandmas */  (c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother)
+                            || (c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother)
+      )
+    ){
+      VERBOSE_IN(true)
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : grandparent-grandchild relation!")
+      VERBOSE_OUT
+      return true;
+    } else if (prohibited_degree == 3){
+      return false; //OK
+
+    //Aunt/Uncle - Nephew
+    } else if (
+       /*niece-uncles*/ (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father == c_mother->father->father)
+                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->father->mother)
+                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father == c_mother->mother->father)
+                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->mother->mother)
+   /*aunt-nephews*/ ||  (c_mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_mother->father == c_father->father->father)
+                    ||  (c_mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_mother->father == c_father->mother->father)
+                    ||  (c_mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_mother->mother == c_father->father->mother)
+                    ||  (c_mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_mother->mother == c_father->mother->mother)
+    ){
+      VERBOSE_IN(true)
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : niece-uncle or aunt-nephew relation!")
+      VERBOSE_OUT
+      return true;
+
+      //Cousins
+    } else if (
+       /*cousins*/      (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->father->father)
+                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->father->mother)
+                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->mother->father)
+                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->mother->mother)
+       /*         */||  (c_mother->father != NULL && c_mother->father->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->father->father)
+                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->father->mother)
+                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->mother->father)
+                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->mother->mother)
+    ){
+      VERBOSE_IN(true)
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : cousins' relation!")
+      VERBOSE_OUT
+      return true;
+
+    } else {
+      return false; //all fine
+    }
+  }
+
   void ext_pop::agents_alive_get_older(){
     for (auto pTemp:byAge_agents_alive){
       pTemp->age++;
@@ -215,7 +302,9 @@ This file contains the core code of the population backend.
     if (min_age==max_age==-1){
       ext_pop_agent *pTemp = getRandomAgentExt(gender, true /*alive*/);
       if (pTemp == NULL){
-        PLOG("\nPopulation Model :   getRandomAgent(): Error, see msgs before.");
+        VERBOSE_IN(false)   //It can totally happen that there is no candidate
+          PLOG("\nPopulation Model :   getRandomAgent(): Error (?), see msgs before.");
+        VERBOSE_OUT
         return NULL;
       } else {
         return pTemp->LSD_counterpart;
@@ -223,7 +312,9 @@ This file contains the core code of the population backend.
     } else {
       ext_pop_agent *pTemp = getRandomAgentExtAliveAge(gender, min_age, max_age);
       if (pTemp == NULL){
-        PLOG("\nPopulation Model :   getRandomAgent(): Error, see msgs before.");
+        VERBOSE_IN(false)   //It can totally happen that there is no candidate
+          PLOG("\nPopulation Model :   getRandomAgent(): Error (?), see msgs before.");
+        VERBOSE_OUT
         return NULL;
       } else {
         return pTemp->LSD_counterpart;

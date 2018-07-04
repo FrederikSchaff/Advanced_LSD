@@ -113,7 +113,7 @@ TRACK_SEQUENCE
     int n_agent = COUNTS(p->up,P_EXT(ext_pop)->agent_label);
 
     PLOG("\nWe expect there to be a total of %i initial agents.",n_agent);
-    INTERACT("pausing... press 'r' to continue",0.0);
+    INTERACT("pausing",0.0);
 
     std::vector< double > age =  P_EXT(ext_pop)->pop_init_age_dist(n_agent);
     int cur_age_idx = 0;     //Assign age to agents
@@ -134,7 +134,7 @@ TRACK_SEQUENCE
       ptrAgent_ext->age=age.at(cur_age_idx);
       WRITES(ptrAgent,GET_VAR_LABEL(ptrAgent,"_death_age"), -1); //use negative value to indicate that death is decided each single year for the initial population.
       ptrAgent_ext->death_age=-1;
-      VERBOSE_IN(true)
+      VERBOSE_IN(false)
         PLOG("\nAdded an extension to agent %i/%i",ID,(int)VS(ptrAgent,GET_ID_LABEL(ptrAgent)));
       VERBOSE_OUT
       cur_age_idx++;
@@ -181,7 +181,7 @@ we are in initialisation-only mode and the existing agent is initialised instead
 If the fake caller is the object that contains the agents, we are in the create-and-initialise mode.
 Additional conditions are possible, e.g. the availability of suitable parents.
 */
-if (t>1) {TRACK_SEQUENCE} //Only track sequence after initialisation.
+TRACK_SEQUENCE
 
   bool initialise_only = false;
     object *ptrAgent;
@@ -212,12 +212,18 @@ if (t>1) {TRACK_SEQUENCE} //Only track sequence after initialisation.
 
   int father_ID = GET_VAR(ptrAgent,"_father");
   int mother_ID = GET_VAR(ptrAgent,"_mother");
-  if (mother_ID<0 || father_ID<0) {
-    PLOG("\n No parents for newborn %i!",ID);
+  if (mother_ID<0 ) {
+    PLOG("\n No mother for newborn %i!",ID);
+  } else {
+    P_EXT(ext_pop)->mother_and_child(mother_ID,ID); //Tell child its mother
+  }
+  if (father_ID<0 ) {
+    PLOG("\n No father for newborn %i!",ID);
   } else {
     P_EXT(ext_pop)->father_and_child(father_ID,ID); //Tell father his child
-    P_EXT(ext_pop)->mother_and_child(mother_ID,ID); //Tell child its father
   }
+
+
 
 
 RESULT(0)

@@ -121,6 +121,8 @@ class ext_pop {
     ext_pop_agent* getRandomAgentExtAliveAge(int gender=0, int min_age = -1, int max_age = -1);
     object* getRandomAgent(int gender=0, int min_age = -1, int max_age = -1);
 
+    bool check_if_incest(int id_mother, int id_pot_father, int prohibited_degree=5);  //returns true if there is incest
+
 
     void shuffle_random_agents();
     void expected_total(int n);
@@ -208,4 +210,10 @@ P_EXTS(ext_obj,ext_pop)->getRandomAgent(gender, (int) min_age, (int) max_age)
   //and any age
 #define POP_GET_RAGENTMS(ext_obj) POP_GET_RAGENTAXS(ext_obj,2,-1,-1)
 #define POP_GET_RAGENTM POP_GET_RAGENTAX(2,-1,-1)
+
+#define POP_NO_INCEST_CHECKXS(ext_obj,id_mother,id_father,degree) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father,degree)  //returns true if there is incest
+#define POP_NO_INCEST_CHECKX(ext_obj,id_mother,id_father,degree) POP_NO_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
+
+#define POP_NO_INCEST_CHECKS(ext_obj,id_mother,id_father) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father)  //returns true if there is incest
+#define POP_NO_INCEST_CHECK(id_mother,id_father) POP_NO_INCEST_CHECKS(SEARCHS(root,"Pop_Model"),id_mother,id_father)
 
