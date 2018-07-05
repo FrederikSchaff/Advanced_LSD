@@ -154,7 +154,7 @@ class ext_gis_rsearch {
 
     ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type=0); //each time a new search is started we create a new object.
     ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type=0); //each time a new search is started we create a new object.
-    ext_gis_rsearch(){}; //default, does not initialise stuff.
+    ext_gis_rsearch(){PLOG("\next_gis_rsearch() empty default initialisation called.");}; //default, does not initialise stuff.
 
     object* next();  //provide next LSD patch object in search radius,
                     //or NULL if done.
@@ -222,8 +222,8 @@ double geo_distance(ext_gis_coords a, ext_gis_coords b);
 //the search includes the obj. itself.
 
 //externals
-ext_gis_rsearch temp_gis_search_obj;
 
+ext_gis_rsearch temp_gis_search_obj;
 #define GIS_CYCLE_NEIGHBOURSS(gis_obj,Xobj,x,y,radius,type) \
   temp_gis_search_obj = ext_gis_rsearch(P_EXTS(gis_obj,ext_gis),x,y,radius,type); \
   PLOG("\n There are %i valid objects to scan.",temp_gis_search_obj.valid_objects.size()); \
@@ -233,13 +233,13 @@ ext_gis_rsearch temp_gis_search_obj;
   GIS_CYCLE_NEIGHBOURSS(gis_obj,Xobj,x,y,radius,0)
 
 #define GIS_CYCLE_NEIGHBOURS_SIMPLE(Xobj,x,y,radius) \
-  GIS_CYCLE_NEIGHBOURS_SIMPLES(SEARCH("GIS_Model"),Xobj,x,y,radius)
+  GIS_CYCLE_NEIGHBOURS_SIMPLES(SEARCHS(root,"GIS_Model"),Xobj,x,y,radius)
 
 #define GIS_CYCLE_NEIGHBOURS_SORTS(gis_obj,Xobj,x,y,radius) \
   GIS_CYCLE_NEIGHBOURSS(gis_obj,Xobj,x,y,radius,1)
 
 #define GIS_CYCLE_NEIGHBOURS_SORT(Xobj,x,y,radius) \
-  GIS_CYCLE_NEIGHBOURS_SORTS(SEARCH("GIS_Model"),Xobj,x,y,radius)
+  GIS_CYCLE_NEIGHBOURS_SORTS(SEARCHS(root,"GIS_Model"),Xobj,x,y,radius)
 
   //Needed: Iterator like for moving through associated obj with given label
   //in given neighbourhood.

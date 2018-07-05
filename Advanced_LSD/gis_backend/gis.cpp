@@ -363,6 +363,7 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
 
 
 object* ext_gis::LSD_by_coords(int x, int y){ //returns the corresponding LSD patch, if it exists
+  PLOG("\nGeography Model :   ext_gis::LSD_by_coords : called with %i,%i",x,y);
   TEST_IN(x<0 || y < 0 || x > xn-1 || y > yn-1)
     return NULL;
   TEST_OUT
@@ -391,7 +392,7 @@ object* ext_gis_rsearch::next(){
   //a simple iterator through the vector of pointers initialised before
   //if agents=true is given, provide the list of LSD objects currently linked
   //to the patch.
-  TEST_IN(false)
+  TEST_IN(true)
     PLOG("\nGeography Model :   ext_gis_rsearch::next(): Producing next LSD object.");
     PLOG("\n total options: %i",valid_objects.size());
   TEST_OUT
@@ -404,7 +405,7 @@ object* ext_gis_rsearch::next(){
   {
     last = target->LSD_by_coords(*it_valid);
     last_distance = it_valid->distance;
-    TEST_IN(false)
+    TEST_IN(true)
       PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance);
       PLOG("\nLSD Counterpart is %s, %g,%g, id %g",last->label,GET_VAR(last,"_x"),GET_VAR(last,"_y"),GET_ID(last));
     TEST_OUT
