@@ -19,7 +19,13 @@ std::string AdvLSD_FakeID_Label(object *callee){
       return NULL;
     }
   TEST_OUT
-  return std::string(std::string(callee->label)+"_ID");
+    try{
+      return std::string(std::string(callee->label)+"_ID");
+    }
+    catch (...){
+        return "noLabelForCallee?";
+    }
+//   return std::string(std::string(callee->label)+"_ID");
 }
 
 //connect the callee label with a given string.
@@ -30,7 +36,13 @@ std::string AdvLSD_FakeVar_Label(object *callee, const std::string& lab2){
       return NULL;
     }
   TEST_OUT
-  return std::string(std::string(callee->label)+lab2);
+    try{
+      return std::string(std::string(callee->label)+lab2);
+    }
+    catch (...){
+        return "noLabelForCallee + lab?";
+    }
+//   return std::string(std::string(callee->label)+lab2);
 }
 
 double AdvLSD_FakeVar(object *callee, const std::string& lab2){

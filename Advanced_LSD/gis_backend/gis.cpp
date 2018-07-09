@@ -161,7 +161,7 @@ ext_gis_patch* ext_gis::move_single(ext_gis_patch* pos, char direction){ //move 
     case 'R': return pos->right;
 
   }
-  PLOG("\nGeography Model :   ext_gis::move(): Wrong kind of input '%c'. Only one of 'dDlLuUrR' allowed.",direction);
+  PLOG("\nERROR Geography Model :   ext_gis::move(): Wrong kind of input '%c'. Only one of 'dDlLuUrR' allowed.",direction);
   return NULL;
 }
 
@@ -186,7 +186,7 @@ ext_gis_patch* ext_gis::move(ext_gis_patch* pos, const std::string& direction, b
 object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool complete){ //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
   TEST_IN(true) //Allow turning off for reasons of performance
     if (x<0 || y<0 || x>= xn || y >= yn){
-      PLOG("\nGeography Model :   ext_gis::move_LSD(): Error, start position (%i,%i) is out of range",x,y);
+      PLOG("\nERROR Geography Model :   ext_gis::move_LSD(): Error, start position (%i,%i) is out of range",x,y);
       return NULL;
     }
   TEST_OUT
@@ -255,6 +255,9 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
 
   //define border. Negative numbers yet allowed, for they simplify distance
   //calculations
+
+  //05.07.2018 15:00:38 Here was an error. I need to keep the distance
+  //(if wrapping ok) but change the coords to allow look-up
 
   //25-june-18
   // also check that in case of wrapping each point is tested once.
@@ -335,14 +338,28 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   }
 
   //next, create a list of the potential candidates
+  //05.07.2018 15:03:30 But change negative coords (wrapping checked before)
   ext_gis_coords temp;
   int total = 0;
+  int tx,ty;
   for (temp.x=x_l; temp.x<=x_r; temp.x++){ //by column
     for (temp.y=y_d; temp.y<=y_u; temp.y++){ //elements in column
       total++; //checked
       temp.distance = geo_distance(origin,temp);
+      tx=temp.x;
+      ty=temp.y;
       if (temp.distance<=radius){
-        valid_objects.push_back(temp); //add to valid objects
+        if (tx<x0){
+          tx = xn + tx; //temp.x < 0!
+        } else if (tx>xn-1){
+          tx -= xn;
+        }
+        if (ty<y0){
+          ty = yn + ty;
+        } else if (ty>yn-1){
+          ty -= yn;
+        }
+        valid_objects.push_back(ext_gis_coords(tx,ty,temp.distance) ); //add to valid objects
 //         PLOG("\n ADDING an item.");
       } else {
 //         PLOG("\n NOT Adding an item");
@@ -363,10 +380,10 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
 
 
 object* ext_gis::LSD_by_coords(int x, int y){ //returns the corresponding LSD patch, if it exists
-  PLOG("\nGeography Model :   ext_gis::LSD_by_coords : called with %i,%i",x,y);
-  TEST_IN(x<0 || y < 0 || x > xn-1 || y > yn-1)
+  if(x<0 || y < 0 || x > xn-1 || y > yn-1){
+    PLOG("\nERROR Geography Model :   ext_gis:: LSD_by_coords : wrong x/y: %i,%i!",x,y);
     return NULL;
-  TEST_OUT
+  }
   return patches.at(x).at(y).LSD_counterpart;
 }
 
@@ -428,12 +445,20 @@ void ext_gis_patch::add_LSD_agent(object* obj_to_add){
 }
 
 bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
-  for (int i=0; i<=LSD_agents.size();i++){
-    if (LSD_agents[i] == obj_to_remove){
-      LSD_agents.erase(LSD_agents.begin()+i);
+  //https://stackoverflow.com/a/26567766/3895476
+  {
+    auto it = std::find(LSD_agents.begin(), LSD_agents.end(), obj_to_remove);
+    if (it != LSD_agents.end()) {
+      LSD_agents.erase(it);
       return true;
     }
   }
+//   for (int i=0; i<=LSD_agents.size();i++){
+//     if (LSD_agents[i] == obj_to_remove){
+//       LSD_agents.erase(LSD_agents.begin()+i);
+//       return true;
+//     }
+//   }
   return false; //Obj was not associated to patch
 }
 
@@ -451,7 +476,7 @@ ext_gis_patch* ext_gis::get_patch_at(int x, int y){
   if (x >= 0 && x < xn && y>=0 && y < yn ){
     return &patches.at(x).at(y);
   } else {
-    PLOG("\nGeography Model :   ext:gis::get_patch_at : Dimensions supplied are wrong. (%i,%i) is outside of boundary 0 <= y < %i and 0 <= x <= %i!",x,y,xn,yn);
+    PLOG("\nERROR Geography Model :   ext:gis::get_patch_at : Dimensions supplied are wrong. (%i,%i) is outside of boundary 0 <= y < %i and 0 <= x <= %i!",x,y,xn,yn);
     return NULL;
   }
 }
@@ -459,15 +484,13 @@ ext_gis_patch* ext_gis::get_patch_at(int x, int y){
 // Utility to associate locations to LSD agent objects
 
 object* ext_gis::LSD_obj_pos_init(object* LSD_obj, int x, int y){
-  if (x==-1){
-    x=random_x();
-  }
-  if (y==-1){
-    y=random_y();
+  if (x==-1 || y==-1){
+    PLOG("\nERROR Geography Model :   ext_gis:: LSD_obj_pos_init : Wrong x/y values: %i,%i",x,y);
+    return NULL;
   }
   ext_gis_patch* ptr_GIS_patch = get_patch_at(x,y);
   if (ptr_GIS_patch == NULL){
-    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_init : There is no such patch!");
+    PLOG("\nERROR Geography Model :   ext_gis:: LSD_obj_pos_init : There is no such patch!");
     return NULL; //this patch does not exist
   } else { //add LSD obj.
     ptr_GIS_patch->add_LSD_agent(LSD_obj);
@@ -485,14 +508,14 @@ object* ext_gis::LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x
   }
   ext_gis_patch* ptr_GIS_patch_new = get_patch_at(x_new,y_new);
   if (ptr_GIS_patch_orig == NULL){
-    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : Origin not found!");
+    PLOG("\nERROR Geography Model :   ext_gis::LSD_obj_pos_move : Origin not found!");
     return NULL; //this patch does not exist
   } else if (ptr_GIS_patch_new == NULL){
-    PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : New Pos not found!");
+    PLOG("\nERROR Geography Model :   ext_gis::LSD_obj_pos_move : New Pos not found!");
     return NULL; //this patch does not exist
   } else {
     if (! ptr_GIS_patch_orig->remove_LSD_agent(LSD_obj)){ //remove and check if success
-      PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : could not remove old association!");
+      PLOG("\nERROR Geography Model :   ext_gis:: LSD_obj_pos_move : could not remove old association!");
       return NULL;
     } else {
       ptr_GIS_patch_new->add_LSD_agent(LSD_obj);
@@ -504,7 +527,7 @@ object* ext_gis::LSD_obj_pos_move(int x_orig, int y_orig, object* LSD_obj, int x
 object* ext_gis::LSD_obj_pos_remove(int x, int y, object* LSD_obj){
     ext_gis_patch* ptr_GIS_patch = get_patch_at(x,y);
     if (! ptr_GIS_patch->remove_LSD_agent(LSD_obj)){ //remove and check if success
-      PLOG("\nGeography Model :   ext_gis::LSD_obj_pos_move : could not remove the association!");
+      PLOG("\nERROR Geography Model :   ext_gis:: LSD_obj_pos_move : could not remove the association!");
       return NULL;
     } else {
       return ptr_GIS_patch->LSD_counterpart;
