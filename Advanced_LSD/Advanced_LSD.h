@@ -90,6 +90,11 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
   #include "ABMAT/ABMAT_head.h"  //load the Analysis Toolkit
 #endif
 
+
+#ifdef MODULE_PAJEK
+  #include "pajek_backend/pajek.cpp"
+#endif
+
 #ifdef MODULE_GEOGRAPHY
   #include "gis_backend/gis.cpp"
 #endif
@@ -98,6 +103,17 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
   #include "pop_backend/pop.cpp"
 #endif
 
+
+//Macros
 #ifdef MODULE_PAJEK
-  #include "pajek_backend/pajek.cpp"
+  #include "pajek_backend/macro_pajek.h"
 #endif
+
+#ifdef MODULE_GEOGRAPHY
+  #include "gis_backend/macro_gis.h"
+#endif
+
+#ifdef MODULE_POPULATION
+  #include "pop_backend/macro_pop.h"
+#endif
+
