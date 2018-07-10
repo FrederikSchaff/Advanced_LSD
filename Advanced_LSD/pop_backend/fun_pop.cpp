@@ -114,7 +114,7 @@ TRACK_SEQUENCE
 
     PLOG("\nWe expect there to be a total of %i initial agents.",n_agent);
     #ifndef NO_WINDOW
-      INTERACT("pausing",0.0);
+//       INTERACT("pausing",0.0);
     #endif
     std::vector< double > age =  P_EXT(ext_pop)->pop_init_age_dist(n_agent);
     int cur_age_idx = 0;     //Assign age to agents

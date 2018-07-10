@@ -347,7 +347,7 @@ if (t == 1){
   }
 
   PLOG("\n \n ...... \n Pausing simulation ... (press run to resume) ");
-  INTERACT("Pause",(double)t);
+//   INTERACT("Pause",(double)t);
 
 }
 

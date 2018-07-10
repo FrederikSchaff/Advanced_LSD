@@ -124,7 +124,7 @@ This file contains the core code of the population backend.
 
     //link those elements using the left / right / up / down pointers.
     //would a function be more performant? This is more flexible, we can break some links
-    VERBOSE_IN(true && xn<5 && yn<5) //checked and ok
+    TEST_IN(true && xn<5 && yn<5) //checked and ok
       PLOG("\nGeography Model :   Testing lattice. Format: (x,y |left,right,up,down)\n");
       ext_gis_patch *ptrPatch;
       for (int y=yn-1; y>=0; y--){
@@ -134,7 +134,7 @@ This file contains the core code of the population backend.
         }
         PLOG("\n");
       }
-    VERBOSE_OUT
+    TEST_OUT
 
 
 
@@ -222,14 +222,14 @@ void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _rad
     default: init_ssimple(); break; //if wrong argument is supplied. add check later
 
   }
-  TEST_IN(true)
+  VERBOSE_IN(false)
     PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising done. Check.");
     PLOG("\n There are %i options.",valid_objects.size());
-  TEST_OUT
+  VERBOSE_OUT
   it_valid  = valid_objects.begin(); //initialise the iterator used in next()
-  TEST_IN(valid_objects.size()>0)
+  VERBOSE_IN(false && valid_objects.size()>0)
     PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance);
-  TEST_OUT
+  VERBOSE_OUT
 }
 
 void ext_gis_rsearch::init(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type){
@@ -263,9 +263,9 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   // also check that in case of wrapping each point is tested once.
   // and that we do not end up in non-valid places when no wrapping.
 
-  TEST_IN(true)
+  VERBOSE_IN(true)
     PLOG("\nGeography Model :   ext_gis_rsearch::init_ssimple(): Defining Set.");
-  TEST_OUT
+  VERBOSE_OUT
 
   //In
   int xn = target->xn - 1;          //note: Locally without offset!
@@ -372,9 +372,9 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
     return t1.distance < t2.distance; //sort ascending in distance
     });
    }
-  TEST_IN(false)
+  VERBOSE_IN(false)
     PLOG("\n there are in %i options valid from %i checked.",valid_objects.size(),total);
-  TEST_OUT
+  VERBOSE_OUT
 
 }
 
@@ -409,12 +409,12 @@ object* ext_gis_rsearch::next(){
   //a simple iterator through the vector of pointers initialised before
   //if agents=true is given, provide the list of LSD objects currently linked
   //to the patch.
-  TEST_IN(true)
+  VERBOSE_IN(false)
     PLOG("\nGeography Model :   ext_gis_rsearch::next(): Producing next LSD object.");
     PLOG("\n total options: %i",valid_objects.size());
-  TEST_OUT
+  VERBOSE_OUT
   if (it_valid == valid_objects.end()){
-    TEST_IN(true)
+    VERBOSE_IN(false)
       PLOG("\n We have tested all %i valid objects.",valid_objects.size());
     TEST_OUT
     return NULL;
@@ -422,10 +422,10 @@ object* ext_gis_rsearch::next(){
   {
     last = target->LSD_by_coords(*it_valid);
     last_distance = it_valid->distance;
-    TEST_IN(true)
+    VERBOSE_IN(false)
       PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance);
       PLOG("\nLSD Counterpart is %s, %g,%g, id %g",last->label,GET_VAR(last,"_x"),GET_VAR(last,"_y"),GET_ID(last));
-    TEST_OUT
+    VERBOSE_OUT
     it_valid++;
   }
   return last;
@@ -447,8 +447,14 @@ void ext_gis_patch::add_LSD_agent(object* obj_to_add){
 bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
   //https://stackoverflow.com/a/26567766/3895476
   {
+    VERBOSE_IN(true)
+      PLOG("\nGeography Model :   : ext_gis_patch::remove_LSD_agent : Currently there are %i objects at patch w. ID %i. Now removing object %s with ID %g",LSD_agents.size(),ID,obj_to_remove->label,GET_ID(obj_to_remove));
+    VERBOSE_OUT
     auto it = std::find(LSD_agents.begin(), LSD_agents.end(), obj_to_remove);
     if (it != LSD_agents.end()) {
+      VERBOSE_IN(true)
+        PLOG("\n\t... success");
+      VERBOSE_OUT
       LSD_agents.erase(it);
       return true;
     }
@@ -459,6 +465,9 @@ bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
 //       return true;
 //     }
 //   }
+  VERBOSE_IN(true)
+    PLOG("\n\t... ERROR! Did not find this object under the associated ones!");
+  VERBOSE_OUT
   return false; //Obj was not associated to patch
 }
 

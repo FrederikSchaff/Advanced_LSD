@@ -79,13 +79,14 @@ This file contains the core code of the population backend.
     new_agent.alive = true;
     new_agent.female = pop_uniform()<.5; //random male or female.
     new_agent.LSD_counterpart=LSD_Agent;
+    new_agent.born = t;
 
     new_agent.death_age = pop_newborn_death_age();
 
     agents.push_back(new_agent);
     random_agents_alive.push_back(&agents.back()); //add pointer to new agent.
     byAge_agents_alive.push_back(&agents.back()); //add pointer to new agent.
-    return random_agents_alive.back();
+    return &agents.back();
   }
 
   /* In the discrete case: h(i)=1- S(i+1)/S(i) */
@@ -106,34 +107,62 @@ This file contains the core code of the population backend.
 
 
   bool ext_pop::agentDies(int ID){ //mark agent as dead.
-    if (agents.size() > ID){
+    if (agents.size() > ID && ID >= 0){
+      TEST_IN(agents.at(ID).alive == false)
+        PLOG("\nError! Population Model :   ext_pop::agentDies: Agent with ID %i is already dead?",ID);
+      TEST_OUT
       agents.at(ID).LSD_counterpart=NULL;
       agents.at(ID).alive=false;
 
       //remove the agent from the list of agents alive with (pot.) random order
-      for (auto it = std::begin(random_agents_alive); it!=std::end(random_agents_alive); ){
-        if (*it == &agents.at(ID) ){
-          //PLOG("\nPopulation Model :   Removing agent with ID %i == %i",agents.at(ID).ID,*it.ID);
-          it = random_agents_alive.erase(it);
+      //https://stackoverflow.com/a/26567766/3895476
+      {
+        VERBOSE_IN(true)
+          PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from random list.",random_agents_alive.size(),ID,agents.at(ID).age);
+        VERBOSE_OUT
+        auto it = std::find(random_agents_alive.begin(), random_agents_alive.end(), &agents.at(ID));
+        if (it != random_agents_alive.end()) {
+          VERBOSE_IN(true)
+            PLOG("\n\t... success");
+          VERBOSE_OUT
+          random_agents_alive.erase(it);
         } else {
-          ++it;
+          PLOG("\nERROR Population Model :   : ext_pop::agentDies : could not find the target in random-list!");
+          return false;
         }
       }
 
-      //remove the agent from the list of agents alive with order by age (decreasing)
-      for (auto it = std::begin(byAge_agents_alive); it!=std::end(byAge_agents_alive); ){
-        if (*it == &agents.at(ID) ){
-          //PLOG("\nPopulation Model :   Removing agent with ID %i == %i",agents.at(ID).ID,*it.ID);
-          it = byAge_agents_alive.erase(it);
+      //https://stackoverflow.com/a/26567766/3895476
+      {
+        VERBOSE_IN(true)
+          PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from sorted (by age) list",byAge_agents_alive.size(),ID,agents.at(ID).age);
+        VERBOSE_OUT
+        auto it = std::find(byAge_agents_alive.begin(), byAge_agents_alive.end(), &agents.at(ID));
+        if (it != byAge_agents_alive.end()) {
+          VERBOSE_IN(true)
+            PLOG("\n\t... success");
+          VERBOSE_OUT
+          byAge_agents_alive.erase(it);
         } else {
-          ++it;
+          PLOG("\nERROR Population Model :   : ext_pop::agentDies : could not find the target in by-age list!");
+          return false;
         }
       }
+
+
+//       for (auto it = std::begin(byAge_agents_alive); it!=std::end(byAge_agents_alive); ){
+//         if (*it == &agents.at(ID) ){
+//           //PLOG("\nPopulation Model :   Removing agent with ID %i == %i",agents.at(ID).ID,*it.ID);
+//           it = byAge_agents_alive.erase(it);
+//         } else {
+//           ++it;
+//         }
+//       }
 
 
       return true;
     } else {
-      PLOG("\nPopulation Model :   Search for agent %i -to be killed- not allowed. Only %i agents created so far.",ID,total());
+      PLOG("\nError! Population Model :   Search for agent %i -to be killed- not allowed. Only %i agents created so far.",ID,total());
       return false;
     }
   }
@@ -226,28 +255,28 @@ This file contains the core code of the population backend.
   }
 
   void ext_pop::agents_alive_get_older(){
-    for (auto pTemp:byAge_agents_alive){
+    for (auto pTemp : byAge_agents_alive){
       pTemp->age++;
     }
   }
 
   ext_pop_agent *ext_pop::getAgentExt(int ID, bool alive){
-    if (agents.size() > ID){
+    if (agents.size() > ID && ID >= 0){
       ext_pop_agent *pTemp = &agents.at(ID);
       if (!alive || pTemp->alive){
         return pTemp;
       } else {
-        PLOG("\nPopulation Model :   getAgentExt(): Search for agent %i (alive) - agent is dead!.",ID);
+        PLOG("\nERROR: Population Model :   getAgentExt(): Search for agent %i (alive) - agent is dead!.",ID);
         return NULL;
       }
     } else {
-      PLOG("\nPopulation Model :   getAgentExt(): Search for agent %i -to be found- not allowed. Only %i agents created so far.",ID,total());
+      PLOG("\nERROR: Population Model :   getAgentExt(): Search for agent %i -to be found- not allowed. Only %i agents created so far.",ID,total());
       return NULL;
     }
   }
 
   object *ext_pop::getAgent(int ID, bool alive){
-    if (agents.size() > ID){
+    if (agents.size() > ID && ID >= 0){
       ext_pop_agent *pTemp = &agents.at(ID);
       if (!alive || pTemp->alive){
         return pTemp->LSD_counterpart;
@@ -257,7 +286,7 @@ This file contains the core code of the population backend.
       }
       return pTemp->LSD_counterpart;
     } else {
-      PLOG("\nPopulation Model :   getAgent(): Search for agent %i -to be found- not allowed. Only %i agents created so far.",ID,total());
+      PLOG("\nERROR! Population Model :   getAgent(): Search for agent %i -to be found- not allowed. Only %i agents created so far.",ID,total());
       return NULL;
     }
   }
@@ -302,8 +331,8 @@ This file contains the core code of the population backend.
     if (min_age==max_age==-1){
       ext_pop_agent *pTemp = getRandomAgentExt(gender, true /*alive*/);
       if (pTemp == NULL){
-        VERBOSE_IN(false)   //It can totally happen that there is no candidate
-          PLOG("\nPopulation Model :   getRandomAgent(): Error (?), see msgs before.");
+        VERBOSE_IN(true)   //It can totally happen that there is no candidate
+          PLOG("\npotERROR? Population Model :   getRandomAgent(): Error (?), see msgs before.");
         VERBOSE_OUT
         return NULL;
       } else {
@@ -312,11 +341,14 @@ This file contains the core code of the population backend.
     } else {
       ext_pop_agent *pTemp = getRandomAgentExtAliveAge(gender, min_age, max_age);
       if (pTemp == NULL){
-        VERBOSE_IN(false)   //It can totally happen that there is no candidate
-          PLOG("\nPopulation Model :   getRandomAgent(): Error (?), see msgs before.");
+        VERBOSE_IN(true)   //It can totally happen that there is no candidate
+          PLOG("\npotERROR! Population Model :   getRandomAgent(): Error (?), see msgs before.");
         VERBOSE_OUT
         return NULL;
       } else {
+        TEST_IN(pTemp->LSD_counterpart == NULL)
+          PLOG("\nERROR! Population Model :   getRandomAgent(): counterpart to agent with ID %i is NULL?",pTemp->ID);
+        TEST_OUT
         return pTemp->LSD_counterpart;
       }
     }
@@ -336,20 +368,25 @@ This file contains the core code of the population backend.
     }
     int start = -1;   //oldest person allowed
     int end = -1;     //youngest person allowed
-    for (int indx = 0; indx < byAge_agents_alive.size()-1; indx++) {
-      if (byAge_agents_alive.at(indx)->age > max_age){
-        start++; //we may end up in an interval that is WRONG, but only if the last candidate is not valid.
+    for (int indx = 0; indx < byAge_agents_alive.size(); indx++) {
+      TEST_IN(byAge_agents_alive.at(indx)==NULL)
+        PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): at indx %i byAge_agents_alive points to NULL. byAge_agents_alive.size() is %i.",indx,byAge_agents_alive.size());
+      TEST_OUT
+      if (start == -1 && byAge_agents_alive.at(indx)->age <= max_age){
+        start=indx; //first one that is not to old
       }
-      if (byAge_agents_alive.at(indx)->age<min_age){
-        break; //we may end up in an intervals that is WRONG, but only if the first candidate is not valid,either.
-      } else {
-        end++;
+      if (byAge_agents_alive.at(indx)->age >= min_age){
+        end = indx; //current last one meeting the criteria
       }
     }
     if (end == -1 || start == -1){
       VERBOSE_IN(true)
-      PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidat. Oldest is %i and youngest %i",
-        byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
+        PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidate.");
+        if (byAge_agents_alive.size()>0) {
+          PLOG("\n\t... Oldest is %i and youngest %i", byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
+        } else {
+          PLOG("\n\t... Error   - No agents alive??");
+        }
       VERBOSE_OUT
       return NULL;
     }
@@ -357,10 +394,17 @@ This file contains the core code of the population backend.
       PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Start: %i (age %i), end: %i (age %i)",
       start,byAge_agents_alive.at(start)->age,end,byAge_agents_alive.at(end)->age);
     VERBOSE_OUT
+    TEST_IN(start == 0 || end == 0)
+      PLOG("\nFire");
+    TEST_OUT
     int indx;
     ext_pop_agent* pTemp = NULL;
     for (int safeguard = 0; safeguard < 1000; safeguard++) {
-      indx = pop_uniform() * double(end-start+1) + start;
+      indx = int (pop_uniform() * double(end-start+1) + start );
+      TEST_IN(indx > byAge_agents_alive.size())
+        PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): random draw outside of range!");
+        return NULL;
+      TEST_OUT
       pTemp = byAge_agents_alive.at(indx);
       if (gender == 0){
         VERBOSE_IN(true)
@@ -379,13 +423,17 @@ This file contains the core code of the population backend.
         } //else continue!
       }
     }
+        VERBOSE_IN(true)
+          PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): Found no candidate after 1000 trials.");
+        VERBOSE_OUT
+
     return NULL;
   }
 
 
   void ext_pop::mother_and_child(int mother_ID, int child_ID){
-    ext_pop_agent *mother = getAgentExt(mother_ID);
-    ext_pop_agent *child = getAgentExt(child_ID);
+    ext_pop_agent *mother = getAgentExt(mother_ID,false);
+    ext_pop_agent *child = getAgentExt(child_ID,false);
 
     if (child == NULL || mother == NULL){
       PLOG("\nPopulation Model :   mother_and_child(): Error. See prev. message(s). mother ID %i, child ID %i",mother_ID,child_ID);

@@ -102,9 +102,11 @@ It also includes the other core-code files (all not fun_*)
   //   #undef TRACK_SEQUENCE_FIRST_OR_LAST
   #define TRACK_SEQUENCE_FIRST_OR_LAST \
     if ( t <= TRACK_SEQUENCE_MAX_T)  { LSD_VALIDATE::track_sequence(t,p,c,var,false); };
+  #define TRACK_SEQUENCE_ALWAYS { LSD_VALIDATE::track_sequence(t,p,c,var); };
 #else
   #define TRACK_SEQUENCE
   #define TRACK_SEQUENCE_FIRST_OR_LAST
+  #define TRACK_SEQUENCE_ALWAYS
 #endif
 
 

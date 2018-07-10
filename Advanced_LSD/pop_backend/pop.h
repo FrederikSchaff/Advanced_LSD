@@ -57,6 +57,7 @@ struct ext_pop_agent {
 
     /*specific*/
     int ID = 0;
+    int born = 0; //time of birth
     int age = 0;
     bool female; //gender, random on creation!
     bool alive = false;

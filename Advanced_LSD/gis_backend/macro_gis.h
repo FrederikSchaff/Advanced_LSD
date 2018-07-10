@@ -16,9 +16,9 @@
 
 //Macros to associate LSD agent objects with patches and move them in space (beam)
 
-#define GIS_RANDOM_XS(gis_obj) uniform_int(0,P_EXTS(gis_obj,ext_gis)->xn)
+#define GIS_RANDOM_XS(gis_obj) uniform_int(0,P_EXTS(gis_obj,ext_gis)->xn-1)
 #define GIS_RANDOM_X() GIS_RANDOM_XS(SEARCHS(root,"GIS_Model"))
-#define GIS_RANDOM_YS(gis_obj) uniform_int(0,P_EXTS(gis_obj,ext_gis)->yn)
+#define GIS_RANDOM_YS(gis_obj) uniform_int(0,P_EXTS(gis_obj,ext_gis)->yn-1)
 #define GIS_RANDOM_Y() GIS_RANDOM_YS(SEARCHS(root,"GIS_Model"))
 
 #define GIS_ASSOC_INITS(gis_obj,obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_obj_pos_init( obj, (int)x, (int)y )

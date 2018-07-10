@@ -68,7 +68,7 @@
 
 
 #ifndef PAJEK_MAX_VERTICES
-	#define PAJEK_MAX_VERTICES 1000  /* The maximal number of vertices */
+	#define PAJEK_MAX_VERTICES 800  /* The maximal number of vertices */
 #endif
 
 #ifndef PAJEK_MAX_SNAPSHOTS

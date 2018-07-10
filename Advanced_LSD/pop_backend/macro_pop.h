@@ -79,8 +79,49 @@ P_EXTS(ext_obj,ext_pop)->getRandomAgent(gender, (int) min_age, (int) max_age)
 #define POP_GET_RAGENTMS(ext_obj) POP_GET_RAGENTAXS(ext_obj,2,-1,-1)
 #define POP_GET_RAGENTM POP_GET_RAGENTAX(2,-1,-1)
 
-#define POP_NO_INCEST_CHECKXS(ext_obj,id_mother,id_father,degree) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father,degree)  //returns true if there is incest
-#define POP_NO_INCEST_CHECKX(ext_obj,id_mother,id_father,degree) POP_NO_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
+#define POP_INCEST_CHECKXS(ext_obj,id_mother,id_father,degree) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father,degree)  //returns true if there is incest
+#define POP_INCEST_CHECKX(ext_obj,id_mother,id_father,degree) POP_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
 
-#define POP_NO_INCEST_CHECKS(ext_obj,id_mother,id_father) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father)  //returns true if there is incest
-#define POP_NO_INCEST_CHECK(id_mother,id_father) POP_NO_INCEST_CHECKS(SEARCHS(root,"Pop_Model"),id_mother,id_father)
+#define POP_INCEST_CHECKS(ext_obj,id_mother,id_father) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father)  //returns true if there is incest
+#define POP_INCEST_CHECK(id_mother,id_father) POP_INCEST_CHECKS(SEARCHS(root,"Pop_Model"),id_mother,id_father)
+
+
+
+//A set of macros in combination with pajek
+
+#ifdef MODULE_PAJEK
+//to do: Make class-dependent
+//Add "child" relation
+  #define PAJEK_POP_LINEAGE_INIT \
+    PAJEK_INIT_NEW_RELATION("child",false)
+
+  //Cycle through all agents, alive or dead, and add them to the network.
+  //Then cycle through all again and add links to children.
+  //use as y the time of birth, as x the # at birth
+  #define PAJEK_POP_LINEAGE_UPDATES(pop_obj)  \
+    int x = 0;     \
+    int last_born = 0;      \
+    for (auto item : P_EXTS(pop_obj,ext_pop)->agents) {    \
+      if (last_born < item.born){  \
+        last_born = item.born;    \
+        x = 0;   \
+      } else {    \
+        x++;      \
+      }           \
+      PAJEK_VERTICE_XP(item.ID,BACKEND_AGENT,item.age,item.female?8:7,item.alive?"Green":"Gray40",1.0+double(item.children.size()),1.0+2.0*double(item.age/double(P_EXTS(pop_obj,ext_pop)->max_life)),x,last_born);  \
+    }        \
+    for (auto item : P_EXTS(pop_obj,ext_pop)->agents) {      \
+      for (auto child : item.children) {      \
+        PAJEK_ARC_X(item.ID,child->ID,"child",item.alive?1:-1,1,"Black"); \
+      }              \
+    }
+
+  #define PAJEK_POP_LINEAGE_UPDATE PAJEK_POP_LINEAGE_UPDATES(SEARCHS(root,"Pop_Model"))
+
+#else
+  #define PAJEK_POP_LINEAGE_INIT
+  #define PAJEK_POP_LINEAGE_UPDATES(pop_obj)
+  #define PAJEK_POP_LINEAGE_UPDATE
+#endif
+
+
