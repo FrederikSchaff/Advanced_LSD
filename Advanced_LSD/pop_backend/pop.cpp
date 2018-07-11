@@ -37,7 +37,7 @@ This file contains the core code of the population backend.
     if (age>=0 && age<survival_rate.size()){
       return survival_rate.at(age);
     } else {
-      //PLOG("\nPopulation Model :   Error in unconditional_survival_rate(). Age %i outside of range 0,%i",age,survival_rate.size()-1);
+      PLOG("\nPopulation Model :   Error in unconditional_survival_rate(). Age %i outside of range 0,%i",age,survival_rate.size()-1);
       //NOPE, not an error. It is possible to survive at max-age and then die.
       return 0.0; //no chance to survive.
     }
@@ -91,14 +91,14 @@ This file contains the core code of the population backend.
 
   /* In the discrete case: h(i)=1- S(i+1)/S(i) */
   double ext_pop::pop_hazard_rate(int cur_age){ //calculate the chance to die, cond. on having survived until now.
-    if (survival_rate.size() > cur_age) {
+    if (survival_rate.size() - 1 > cur_age) {
       double _now = unconditional_survival_rate(cur_age);
       double _next = unconditional_survival_rate(cur_age+1);
-      double _cond_surv = 1 - _next/_now; //chance of surviving current year, conditional on survival of prior.
+      double _cond_hazard = 1 - _next/_now; //chance of surviving current year, conditional on survival of prior.
                                   VERBOSE_IN(false)
-                                    PLOG("\nPopulation Model :   Unconditional survival at cur age %i is %g. hazard rate is %g",cur_age, _next ,  _cond_surv);
+                                    PLOG("\nPopulation Model :   Unconditional survival at cur age %i is %g. hazard rate is %g",cur_age, _next ,  _cond_hazard);
                                   VERBOSE_OUT
-      return  _cond_surv ;
+      return  _cond_hazard ;
     } else {
       return 1.0; //sure death
     }
@@ -177,6 +177,11 @@ This file contains the core code of the population backend.
     }
     ext_pop_agent* c_mother = &agents.at(id_mother);
     ext_pop_agent* c_father = &agents.at(id_father);
+
+    if (c_mother == NULL || c_father == NULL){
+      PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? mother or father does not exist. No incest.");
+      return false;
+    }
 
     //(half-)siblings?
     if (c_mother->mother != NULL
