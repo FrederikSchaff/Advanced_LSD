@@ -59,12 +59,12 @@ struct ext_pop_agent {
     int ID = 0;
     int born = 0; //time of birth
     int age = 0;
-    bool female; //gender, random on creation!
+    bool female = false; //gender, random on creation!
     bool alive = false;
     ext_pop_agent* father = NULL;
     ext_pop_agent* mother = NULL;
     std::vector <ext_pop_agent*> children;
-    double death_age; //Age of death
+    double death_age = -1; //Age of death
 
 
     //to do: Pointer to own pos. in randomised and by age queue, to improve performance?
@@ -88,6 +88,7 @@ class ext_pop {
 
     //For the agents alive and dead
     std::vector<ext_pop_agent> agents; //List of agents (alive?, ID, pointer to ext_agent)
+    int max_size_agents = 0; //current method of using pointers to elements in vector is unsave. Rais Error when necessary.
     std::vector<ext_pop_agent*> random_agents_alive; //List of all agents alive, can be randomised.
     std::vector<ext_pop_agent*> byAge_agents_alive; //List of all agents alive, decreasing in age.
     ext_pop_agent_it it_random_agents_alive;
@@ -115,7 +116,7 @@ class ext_pop {
     double pop_hazard_rate(int cur_age);
     bool agentDies(int ID);
     ext_pop_agent* getAgentExt(int ID, bool alive = true);
-    object* getAgent(int ID, bool alive = true);
+    object* getAgent(int ID);
 
     /* gender: 0 = any, 1 = female, 2 = male */
     ext_pop_agent* getRandomAgentExt(int gender=0, bool alive = true);

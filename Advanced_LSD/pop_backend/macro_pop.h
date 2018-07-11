@@ -42,7 +42,7 @@
 //#define POP_RCYCLE_AGENT(y) POP_RCYCLE_AGENT(p,y)
 
 //Return the pointer to the living agent with ID or NULL if it does not exist.
-#define POP_GET_AGENTS(ext_obj,ID) P_EXTS(ext_obj,ext_pop)->getAgent((int)ID,true)
+#define POP_GET_AGENTS(ext_obj,ID) P_EXTS(ext_obj,ext_pop)->getAgent((int)ID)
 #define POP_GET_AGENT(ID) POP_GET_AGENTS(SEARCHS(root,"Pop_Model"),ID)
 
 //Return pointer to living agents ext_pop_agent record or NULL if it is dead / does not exist

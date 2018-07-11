@@ -177,20 +177,13 @@ TRACK_SEQUENCE
   }
 
 
+  //at counterpart
+  INCRS(c->hook->up,"Agent_degree",-1);
+  DELETE(c->hook);
 
-  //Check not necessary, for upon deleting an agent we will first cut all links.
-  //If we ever change this, we need to fix things here!
-
-  //Check if the acquainted agent lives, if yes, delete acquaintance object at
-  //acquainted agent first.
-//   cur =   P_EXTS(SEARCHS(root,"Pop_Model"),ext_pop)->getAgent((int)VS(c,"Acquaintance_ID"),true);
-//  if (POP_GET_AGENT(VS(c,"Acquaintance_ID")) != NULL){
-   INCRS(c->hook->up,"Agent_degree",-1);
-   DELETE(c->hook);
-//  }
-
-    INCRS(c->up,"Agent_degree",-1);
-    DELETE(c);
+  //at self
+  INCRS(c->up,"Agent_degree",-1);
+  DELETE(c);
 
 RESULT(0)
 

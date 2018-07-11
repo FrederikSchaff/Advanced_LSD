@@ -74,6 +74,12 @@ This file contains the core code of the population backend.
   }
 
   ext_pop_agent* ext_pop::newAgent(object* LSD_Agent){ //create a new agent card, link the card to the agent, return the ID of the agent.
+    //Check if vector will grow and rais error if yes.
+    if (agents.size() > max_size_agents + 2 ){
+      PLOG("\nPopulation Model :   *ext_pop::newAgent() : Error! Running past preallocated memory will cause memory-leak!");
+      return NULL;
+    }
+
     ext_pop_agent new_agent;
     new_agent.ID = agents.size();
     new_agent.alive = true;
@@ -280,16 +286,15 @@ This file contains the core code of the population backend.
     }
   }
 
-  object *ext_pop::getAgent(int ID, bool alive){
+  object *ext_pop::getAgent(int ID){
     if (agents.size() > ID && ID >= 0){
       ext_pop_agent *pTemp = &agents.at(ID);
-      if (!alive || pTemp->alive){
+      if (pTemp->alive){
         return pTemp->LSD_counterpart;
       } else {
         PLOG("\nPopulation Model :   getAgent(): Search for agent %i (alive) - agent is dead!.",ID);
         return NULL;
       }
-      return pTemp->LSD_counterpart;
     } else {
       PLOG("\nERROR! Population Model :   getAgent(): Search for agent %i -to be found- not allowed. Only %i agents created so far.",ID,total());
       return NULL;
@@ -301,9 +306,9 @@ This file contains the core code of the population backend.
     ext_pop_agent *pTemp = NULL;
     int indx = 0;
     int temp_gender = 0;
-    if (alive) {
+    if (alive) {   //search in alive agents only.
       for (int safeguard = 0; safeguard < 1000; safeguard++) {
-        indx = pop_uniform() * random_agents_alive.size();
+        indx = pop_uniform() * double(random_agents_alive.size());
         pTemp = random_agents_alive.at(indx);
         if (gender == 0){
           return pTemp;
@@ -314,9 +319,9 @@ This file contains the core code of the population backend.
           } //else continue!
         }
       }
-    } else {
+    } else {  //search in all agents ever existed.
       for (int safeguard = 0; safeguard < 1000; safeguard++) {
-        indx = pop_uniform() * agents.size();
+        indx = pop_uniform() * double(agents.size());
         pTemp = &agents.at(indx);
         if (gender == 0){
           return pTemp;
@@ -328,12 +333,13 @@ This file contains the core code of the population backend.
         }
       }
     }
+    PLOG("\nError! Population Model :   *ext_pop::getRandomAgentExt : Could not find a candidate in 1000 iterations.");
     return NULL;
   }
 
   object *ext_pop::getRandomAgent(int gender, int min_age, int max_age){
   /* 0 = any, 1 = female, 2 = male */
-    if (min_age==max_age==-1){
+    if (min_age==-1 && max_age==-1){
       ext_pop_agent *pTemp = getRandomAgentExt(gender, true /*alive*/);
       if (pTemp == NULL){
         VERBOSE_IN(true)   //It can totally happen that there is no candidate
@@ -341,6 +347,9 @@ This file contains the core code of the population backend.
         VERBOSE_OUT
         return NULL;
       } else {
+        TEST_IN(pTemp->LSD_counterpart==NULL)
+          PLOG("\npotERROR? Population Model :   getRandomAgent(): Error (?), found a valid ext_pop_agent but with an invalid (NULL) LSD obj..");
+        TEST_OUT
         return pTemp->LSD_counterpart;
       }
     } else {
@@ -378,7 +387,7 @@ This file contains the core code of the population backend.
         PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): at indx %i byAge_agents_alive points to NULL. byAge_agents_alive.size() is %i.",indx,byAge_agents_alive.size());
       TEST_OUT
       if (start == -1 && byAge_agents_alive.at(indx)->age <= max_age){
-        start=indx; //first one that is not to old
+        start = indx; //first one that is not to old
       }
       if (byAge_agents_alive.at(indx)->age >= min_age){
         end = indx; //current last one meeting the criteria
@@ -388,7 +397,7 @@ This file contains the core code of the population backend.
       VERBOSE_IN(true)
         PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidate.");
         if (byAge_agents_alive.size()>0) {
-          PLOG("\n\t... Oldest is %i and youngest %i", byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
+          PLOG("\n\t... size of byAge_agents_alive vec is %i. Oldest is %i and youngest %i",byAge_agents_alive.size(), byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
         } else {
           PLOG("\n\t... Error   - No agents alive??");
         }
@@ -467,7 +476,8 @@ This file contains the core code of the population backend.
   /* optional*/
 
   void ext_pop::expected_total(int n){ //increase the vector size to its final capacity. This increases performance.
-      agents.reserve(n);  //if already more space is allocated, nothing happens.
+      agents.reserve(n*2);  //if already more space is allocated, nothing happens.
+      max_size_agents = n*2;
   }
 
 
