@@ -281,6 +281,8 @@ TRACK_SEQUENCE
   }
   /*-----------------------*/
 
+  INCR("Pop_age",newborn);
+
 RESULT(newborn)
 
 EQUATION("Pop_age")
