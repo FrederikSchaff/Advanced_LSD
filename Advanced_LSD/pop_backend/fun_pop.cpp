@@ -293,7 +293,7 @@ TRACK_SEQUENCE
   }
   P_EXT(ext_pop)->agents_alive_get_older();
 
-  TEST_IN(t<5)
+  TEST_IN(false && t<5) //protocoll ok
     ext_pop_agent* pAgentExt;
     cur=P_EXT(ext_pop)->getRandomAgent(2,t,t+2); //male
     PLOG("\nTest: Random agent should have gender %s and age between %i and %i","male",t,t+2);

@@ -338,7 +338,8 @@ bool pajek_append (int time, bool final )
 
     position_x=pajek_vertices_x_pos[i];
     position_y=pajek_vertices_y_pos[i];
-		if (position_x < 0 || position_x > 1 || position_y < 0 || position_y > 1){
+    //11.07.2018 10:35:14 only adjust if < 0
+		if (position_x < 0  || position_y < 0 ){
       if (PAJEK_FORCE_COMPLETE){
       	pajek_relative_xy( (double) (pajek_vertices_ID[i]-1) / (double) (maxID), \
 												 &position_x, &position_y);

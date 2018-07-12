@@ -40,6 +40,29 @@ It also includes the other core-code files (all not fun_*)
 
 /********************************************************/
 
+#include <ctime>
+
+// To get time info, see   http://stackoverflow.com/a/2962914/3895476
+#define SET_LOCAL_CLOCK \
+  struct timespec local_start, local_finish;   \
+  clock_gettime(CLOCK_MONOTONIC, &local_start); \
+  int local_clock_id = int(local_start.tv_sec);\
+  PLOG("\ntCLOCK Setting clock with ID %i",local_clock_id);
+
+#define RESET_LOCAL_CLOCK \
+  local_clock_id++;\
+  clock_gettime(CLOCK_MONOTONIC, &local_start);\
+  local_clock_id = int(local_start.tv_sec);\
+  PLOG("\n\tCLOCK Re-setting clock with new ID %i",local_clock_id);
+
+#define REPORT_LOCAL_CLOCK    \
+{                             \
+clock_gettime(CLOCK_MONOTONIC, &local_finish);\
+double elapsed = (local_finish.tv_sec - local_start.tv_sec);\
+       elapsed += (local_finish.tv_nsec - local_start.tv_nsec) / 1000000000.0;\
+PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elapsed);\
+}
+
 #ifndef MODULE_DEBUG //GUARD
   #define MODULE_DEBUG
 #endif

@@ -80,7 +80,7 @@ P_EXTS(ext_obj,ext_pop)->getRandomAgent(gender, (int) min_age, (int) max_age)
 #define POP_GET_RAGENTM POP_GET_RAGENTAX(2,-1,-1)
 
 #define POP_INCEST_CHECKXS(ext_obj,id_mother,id_father,degree) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father,degree)  //returns true if there is incest
-#define POP_INCEST_CHECKX(ext_obj,id_mother,id_father,degree) POP_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
+#define POP_INCEST_CHECKX(id_mother,id_father,degree) POP_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
 
 #define POP_INCEST_CHECKS(ext_obj,id_mother,id_father) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father)  //returns true if there is incest
 #define POP_INCEST_CHECK(id_mother,id_father) POP_INCEST_CHECKS(SEARCHS(root,"Pop_Model"),id_mother,id_father)

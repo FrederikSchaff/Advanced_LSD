@@ -123,12 +123,12 @@ This file contains the core code of the population backend.
       //remove the agent from the list of agents alive with (pot.) random order
       //https://stackoverflow.com/a/26567766/3895476
       {
-        VERBOSE_IN(true)
+        VERBOSE_IN(false)
           PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from random list.",random_agents_alive.size(),ID,agents.at(ID).age);
         VERBOSE_OUT
         auto it = std::find(random_agents_alive.begin(), random_agents_alive.end(), &agents.at(ID));
         if (it != random_agents_alive.end()) {
-          VERBOSE_IN(true)
+          VERBOSE_IN(false)
             PLOG("\n\t... success");
           VERBOSE_OUT
           random_agents_alive.erase(it);
@@ -140,12 +140,12 @@ This file contains the core code of the population backend.
 
       //https://stackoverflow.com/a/26567766/3895476
       {
-        VERBOSE_IN(true)
+        VERBOSE_IN(false)
           PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from sorted (by age) list",byAge_agents_alive.size(),ID,agents.at(ID).age);
         VERBOSE_OUT
         auto it = std::find(byAge_agents_alive.begin(), byAge_agents_alive.end(), &agents.at(ID));
         if (it != byAge_agents_alive.end()) {
-          VERBOSE_IN(true)
+          VERBOSE_IN(false)
             PLOG("\n\t... success");
           VERBOSE_OUT
           byAge_agents_alive.erase(it);
@@ -292,7 +292,7 @@ This file contains the core code of the population backend.
       if (pTemp->alive){
         return pTemp->LSD_counterpart;
       } else {
-        PLOG("\nPopulation Model :   getAgent(): Search for agent %i (alive) - agent is dead!.",ID);
+        PLOG("\nError?! Population Model :   getAgent(): Search for agent %i (alive) - agent is dead!.",ID);
         return NULL;
       }
     } else {
@@ -373,7 +373,7 @@ This file contains the core code of the population backend.
     as in the version without AliveAge.
     To do: more efficient procedure if many calls. (and without chance to select twice the same)
   */
-    VERBOSE_IN(true)
+    VERBOSE_IN(false)
       PLOG("\n\nPopulation Model :   getRandomAgentExtAliveAge() called with gender %s, min_age %i and max_age %i",gender==1?"female":(gender==2?"male":"unspecified"),min_age,max_age);
     VERBOSE_OUT
     if (min_age > max_age){
@@ -394,7 +394,7 @@ This file contains the core code of the population backend.
       }
     }
     if (end == -1 || start == -1){
-      VERBOSE_IN(true)
+      VERBOSE_IN(false)
         PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidate.");
         if (byAge_agents_alive.size()>0) {
           PLOG("\n\t... size of byAge_agents_alive vec is %i. Oldest is %i and youngest %i",byAge_agents_alive.size(), byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
@@ -404,12 +404,12 @@ This file contains the core code of the population backend.
       VERBOSE_OUT
       return NULL;
     }
-    VERBOSE_IN(true)
+    VERBOSE_IN(false)
       PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Start: %i (age %i), end: %i (age %i)",
       start,byAge_agents_alive.at(start)->age,end,byAge_agents_alive.at(end)->age);
     VERBOSE_OUT
     TEST_IN(start == 0 || end == 0)
-      PLOG("\nFire");
+      PLOG("\nFire"); //an old check
     TEST_OUT
     int indx;
     ext_pop_agent* pTemp = NULL;
@@ -421,7 +421,7 @@ This file contains the core code of the population backend.
       TEST_OUT
       pTemp = byAge_agents_alive.at(indx);
       if (gender == 0){
-        VERBOSE_IN(true)
+        VERBOSE_IN(false)
           PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Found a candidate after %i trials. Indx %i, ID %i, age %i",
                 safeguard,indx,byAge_agents_alive.at(indx)->ID,byAge_agents_alive.at(indx)->age);
         VERBOSE_OUT
@@ -429,7 +429,7 @@ This file contains the core code of the population backend.
       } else {
         int temp_gender = (pTemp->female?1:2);
         if (temp_gender == gender) {
-          VERBOSE_IN(true)
+          VERBOSE_IN(false)
             PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Found a candidate after %i trials. Indx %i, ID %i, age %i",
                   safeguard,indx,byAge_agents_alive.at(indx)->ID,byAge_agents_alive.at(indx)->age);
           VERBOSE_OUT
@@ -536,7 +536,7 @@ This file contains the core code of the population backend.
 //                                   PLOG("\nPopulation Model :   Sorted agent %i has age %i and will die with age %i",i+1,age_out[i].first,age_out[i].second);
 //                                   VERBOSE_OUT
     }
-    VERBOSE_IN(init_pop_age.size()>10)
+    VERBOSE_IN(false & init_pop_age.size()>10)
       PLOG("\nPopulation Model :   Max age: %i, size of survival CDF: %i",max_life, survival_rate.size());
 
       PLOG("\nPopulation Model :   pop_init_age_dist(): First 10 agents age in original order is:");
@@ -545,7 +545,7 @@ This file contains the core code of the population backend.
       }
     VERBOSE_OUT
     std::reverse(std::begin(init_pop_age), std::end(init_pop_age));  //make order decreasing in age.
-    VERBOSE_IN(init_pop_age.size()>10)
+    VERBOSE_IN(false & init_pop_age.size()>10)
       PLOG("\nPopulation Model :   pop_init_age_dist(): First 10 agents age in FINAL order is:");
       for (int i = 0; i<10; i++){
         PLOG(" %g,",init_pop_age.at(i));

@@ -27,6 +27,7 @@ further down in the tree, this will not be flagged.
 
 #include <string>
 
+
 #ifndef TRACK_SEQUENCE_MAX_T
   #define TRACK_SEQUENCE_MAX_T max_step
 #endif

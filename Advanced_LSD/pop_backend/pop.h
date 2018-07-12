@@ -123,7 +123,7 @@ class ext_pop {
     ext_pop_agent* getRandomAgentExtAliveAge(int gender=0, int min_age = -1, int max_age = -1);
     object* getRandomAgent(int gender=0, int min_age = -1, int max_age = -1);
 
-    bool check_if_incest(int id_mother, int id_pot_father, int prohibited_degree=5);  //returns true if there is incest
+    bool check_if_incest(int id_mother, int id_pot_father, int prohibited_degree=5);  //returns true if there is incest, default check all.
 
 
     void shuffle_random_agents();

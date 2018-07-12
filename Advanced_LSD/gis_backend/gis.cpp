@@ -200,12 +200,12 @@ object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool compl
 */
 
 void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
-  TEST_IN(true)
+  VERBOSE_IN(false)
     PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising");
     PLOG("\n target LSD Object holding lattice is: %s", _target->LSD_counterpart->label);
     PLOG("\n Search is centered at: %i, %i and radius is: %g.",_origin.x,_origin.y,_radius);
     PLOG("\n Type of search is %i",_type);
-  TEST_OUT
+  VERBOSE_OUT
 
   target = _target;
   origin = _origin;
@@ -263,7 +263,7 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   // also check that in case of wrapping each point is tested once.
   // and that we do not end up in non-valid places when no wrapping.
 
-  VERBOSE_IN(true)
+  VERBOSE_IN(false)
     PLOG("\nGeography Model :   ext_gis_rsearch::init_ssimple(): Defining Set.");
   VERBOSE_OUT
 
@@ -438,7 +438,7 @@ ext_gis_coords::ext_gis_coords(int _x, int _y, double _distance){
 }
 
 void ext_gis_patch::add_LSD_agent(object* obj_to_add){
-  VERBOSE_IN(true)
+  VERBOSE_IN(false)
     PLOG("\nGeography Model :   : ext_gis_patch::add_LSD_agent : Currently there are %i objects at patch w. ID %i. Now adding object %s with ID %g",LSD_agents.size(),ID,obj_to_add->label,GET_ID(obj_to_add));
   VERBOSE_OUT
   LSD_agents.push_back(obj_to_add);
@@ -447,12 +447,12 @@ void ext_gis_patch::add_LSD_agent(object* obj_to_add){
 bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
   //https://stackoverflow.com/a/26567766/3895476
   {
-    VERBOSE_IN(true)
+    VERBOSE_IN(false)
       PLOG("\nGeography Model :   : ext_gis_patch::remove_LSD_agent : Currently there are %i objects at patch w. ID %i. Now removing object %s with ID %g",LSD_agents.size(),ID,obj_to_remove->label,GET_ID(obj_to_remove));
     VERBOSE_OUT
     auto it = std::find(LSD_agents.begin(), LSD_agents.end(), obj_to_remove);
     if (it != LSD_agents.end()) {
-      VERBOSE_IN(true)
+      VERBOSE_IN(false)
         PLOG("\n\t... success");
       VERBOSE_OUT
       LSD_agents.erase(it);
@@ -465,9 +465,7 @@ bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
 //       return true;
 //     }
 //   }
-  VERBOSE_IN(true)
-    PLOG("\n\t... ERROR! Did not find this object under the associated ones!");
-  VERBOSE_OUT
+    PLOG("\nGeography Model :   : ext_gis_patch::remove_LSD_agent :  ERROR! Did not find this object under the associated ones!");
   return false; //Obj was not associated to patch
 }
 
