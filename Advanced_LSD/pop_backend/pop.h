@@ -123,6 +123,7 @@ class ext_pop {
     ext_pop_agent* getRandomAgentExtAliveAge(int gender=0, int min_age = -1, int max_age = -1);
     object* getRandomAgent(int gender=0, int min_age = -1, int max_age = -1);
 
+    int family_degree(int id_mother, int id_father,  int max_tested_degree=-1); //returns the family degree from 0 (not tracked) over 1 (siblings) to ... see function, optional: define when to stop checking for kinship
     bool check_if_incest(int id_mother, int id_pot_father, int prohibited_degree=5);  //returns true if there is incest, default check all.
 
 

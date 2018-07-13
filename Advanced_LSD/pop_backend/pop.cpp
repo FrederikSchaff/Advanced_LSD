@@ -173,95 +173,191 @@ This file contains the core code of the population backend.
     }
   }
 
+  /* a function that returns the family degree, defined as follows:
+    -1 - flag error.
+
+    0 - none of the below/tested ones
+    1 - siblings
+    2 - parent-child
+    3 - grandchild-grandparent
+	  4 - nephew - uncle/aunt
+    5 - cousin - cousin
+  */
+  int ext_pop::family_degree(int id_mother, int id_father, int max_tested_degree){
+  bool verbose_logging = false;
+
+  VERBOSE_IN(verbose_logging){
+    PLOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i",id_mother,id_father,max_tested_degree);
+  }
+
+  if (max_tested_degree == -1) {max_tested_degree=5;} //test everything as default
+
+  int tested_degree = 0;
+  if (max_tested_degree == 0){ return 0;  } //check if at end
+
+
+  //test if orphan
+  if (id_mother < 0 && id_father < 0) { //no parents
+
+    VERBOSE_IN(verbose_logging){
+      PLOG("\nt .. full orphan");
+    }
+    return 0; //full orphan
+  }
+
+  //set-up
+  ext_pop_agent* c_mother = NULL; //default: no mother
+  if (id_mother > agents.size()-1 ){
+    PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? mother id > ids");
+    return -1; //Flag error -
+  } else if (id_mother >= 0) {
+    c_mother = &agents.at(id_mother);
+  }
+  ext_pop_agent* c_father = NULL;
+  if ( id_father > agents.size()-1 ) {
+    PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? father id > ids");
+    return -1; //Flag error -
+  } else if (id_father >= 0) {
+    c_father = &agents.at(id_father);
+  }
+
+    //just in case...
+    TEST_IN (c_mother == NULL || c_father == NULL){
+      PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? mother or father does not exist. No incest.");
+      return -1; //flag error
+    }
+
+  //Start serious testing
+
+  //mother siblings
+  if (c_mother->mother != NULL && c_mother->mother == c_father->mother) {
+    return 1;
+  }
+  //father siblings
+  if (c_mother->father != NULL && c_mother->father == c_father->father) {
+    return 1;
+  }
+    VERBOSE_IN(verbose_logging){
+      PLOG("\nt .. not siblings");
+    }
+  tested_degree++;
+  if (max_tested_degree == tested_degree){ return 0; }
+
+  //parent-child?
+  if ( (c_mother->father != NULL && c_mother->father == c_father)
+    || (c_father->mother != NULL && c_father->mother == c_mother)
+     ){
+    return 2;
+  }
+    VERBOSE_IN(verbose_logging){
+      PLOG(", nor parent-child");
+    }
+  tested_degree++;
+  if (max_tested_degree == tested_degree){ return 0; }
+
+  //grandchild-grandparent?
+  if ( (/* grandchild-grandpas */
+         (c_mother->father != NULL && c_mother->father->father != NULL && c_mother->father->father == c_father)
+      || (c_mother->mother != NULL && c_mother->mother->father != NULL && c_mother->mother->father == c_father)
+       ) ||
+       (/*grandson-grandmas */
+         (c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother)
+      || (c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother)
+       )
+     ){
+    return 3;
+  }
+
+    VERBOSE_IN(verbose_logging){
+      PLOG(", nor grandchild-grandparent");
+    }
+  tested_degree++;
+  if (max_tested_degree == tested_degree){ return 0; }
+
+  //Aunt/Uncle - Nephew
+  if ( (/*niece-uncles*/
+                (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father == c_mother->father->father)
+            ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->father->mother)
+            ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father == c_mother->mother->father)
+            ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->mother->mother)
+       ) ||
+       (/*aunt-nephews*/
+                (c_mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_mother->father == c_father->father->father)
+            ||  (c_mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_mother->father == c_father->mother->father)
+            ||  (c_mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_mother->mother == c_father->father->mother)
+            ||  (c_mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_mother->mother == c_father->mother->mother)
+       )
+     ){
+    return 4;
+  }
+    VERBOSE_IN(verbose_logging){
+      PLOG(", nor aunt/uncle-niece/nephew");
+    }
+  tested_degree++;
+  if (max_tested_degree == tested_degree){ return 0; }
+
+  //Cousins
+  if (
+       (/*cousins*/
+                (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->father->father)
+            ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->father->mother)
+            ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->mother->father)
+            ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->mother->mother)
+       ) ||
+       (/*         */
+                (c_mother->father != NULL && c_mother->father->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->father->father)
+            ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->father->mother)
+            ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->mother->father)
+            ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->mother->mother)
+       )
+     ){
+    return 5;
+  }
+    VERBOSE_IN(verbose_logging){
+      PLOG(", nor cousins");
+    }
+  tested_degree++;
+  if (max_tested_degree == tested_degree){ return 0; }
+
+  //lesser degree
+  return 0;
+}
+
+  // Check the family degree of the relationship
   //Check if there is potential of incest with given "degree" - only direct biology.
   // allowed degree: 0 - incest allowed, 1 - siblings, 2 - also parent-child, 3 - also grandchild-grandparent, 4 - also nephew - uncle/aunt, 5 - also cousin - cousin.
   // we compare be-directional, to also catch if a mother would have a child with a (grand)child.
   //returns true if there is incest
   bool ext_pop::check_if_incest(int id_mother, int id_father, int prohibited_degree){
+    bool verbose_logging = false;
     if (prohibited_degree == 0){
       return false; //no prohibited incest.
     }
-    ext_pop_agent* c_mother = &agents.at(id_mother);
-    ext_pop_agent* c_father = &agents.at(id_father);
+    int kinship_degree = family_degree(id_mother, id_father, prohibited_degree);
 
-    if (c_mother == NULL || c_father == NULL){
-      PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? mother or father does not exist. No incest.");
-      return false;
-    }
+    if (kinship_degree >= prohibited_degree){
+      VERBOSE_IN(verbose_logging){
+        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Maximum forbidden degree is %i",prohibited_degree);
+        switch (kinship_degree){
 
-    //(half-)siblings?
-    if (c_mother->mother != NULL
-        && (c_mother->mother == c_father->mother || c_mother->father == c_father->father)
-      ){
-      VERBOSE_IN(true){
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : siblings!")
+          case 0: PLOG("\n\t... No relevant family relation. ERROR this should not happen.");
+                  break;
+          case 1: PLOG("\n\t... siblings.");
+                  break;
+          case 2: PLOG("\n\t... parent-child.");
+                  break;
+          case 3: PLOG("\n\t... grandchild-grandparent.");
+                  break;
+          case 4: PLOG("\n\t... nephew - uncle/aunt.");
+                  break;
+          case 5: PLOG("\n\t... cousin - cousin.");
+                  break;
+        }
       }
-      return true;
 
-    } else if (prohibited_degree == 1){
-      return false; //OK
-
-    //parent-child?
-    } else if ( (c_mother->father != NULL && c_mother->father == c_father)
-             || (c_father->mother != NULL && c_father->mother == c_mother)
-      ){
-      VERBOSE_IN(true){
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : parent-child relation!")
-      }
-      return true;
-    } else if (prohibited_degree == 2 ){
-      return false; //OK
-
-    //grandchild-grandparent?
-    } else if (
-      (/* grandchild-grandpas */ (c_mother->father != NULL && c_mother->father->father != NULL && c_mother->father->father == c_father)
-                              || (c_mother->mother != NULL && c_mother->mother->father != NULL && c_mother->mother->father == c_father)
-      ) || (
-       /*grandson-grandmas */  (c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother)
-                            || (c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother)
-      )
-    ){
-      VERBOSE_IN(true){
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : grandparent-grandchild relation!")
-      }
-      return true;
-    } else if (prohibited_degree == 3){
-      return false; //OK
-
-    //Aunt/Uncle - Nephew
-    } else if (
-       /*niece-uncles*/ (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father == c_mother->father->father)
-                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->father->mother)
-                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father == c_mother->mother->father)
-                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother == c_mother->mother->mother)
-   /*aunt-nephews*/ ||  (c_mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_mother->father == c_father->father->father)
-                    ||  (c_mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_mother->father == c_father->mother->father)
-                    ||  (c_mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_mother->mother == c_father->father->mother)
-                    ||  (c_mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_mother->mother == c_father->mother->mother)
-    ){
-      VERBOSE_IN(true){
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : niece-uncle or aunt-nephew relation!")
-      }
-      return true;
-
-      //Cousins
-    } else if (
-       /*cousins*/      (c_mother->father != NULL && c_mother->father->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->father->father)
-                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->father->mother)
-                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->father != NULL && c_father->father->father != NULL && c_father->father->father == c_mother->mother->father)
-                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->father != NULL && c_father->father->mother != NULL && c_father->father->mother == c_mother->mother->mother)
-       /*         */||  (c_mother->father != NULL && c_mother->father->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->father->father)
-                    ||  (c_mother->father != NULL && c_mother->father->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->father->mother)
-                    ||  (c_mother->mother != NULL && c_mother->mother->father != NULL && c_father->mother != NULL && c_father->mother->father != NULL && c_father->mother->father == c_mother->mother->father)
-                    ||  (c_mother->mother != NULL && c_mother->mother->mother != NULL && c_father->mother != NULL && c_father->mother->mother != NULL && c_father->mother->mother == c_mother->mother->mother)
-    ){
-      VERBOSE_IN(true){
-        PLOG("\nPopulation Model :   : ext_pop::check_if_incest : cousins' relation!")
-      }
-      return true;
-
+      return true; //incest
     } else {
-      return false; //all fine
+      return false;
     }
   }
 
