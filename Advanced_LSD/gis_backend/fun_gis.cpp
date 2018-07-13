@@ -51,10 +51,18 @@ template and can be left "as is" by users.
 FUNCTION("Gis_Init")
 /* Initialise the population model. Called via fake-caller with c=Patch object */
 TRACK_SEQUENCE
-
   int xn = V("xn");
   int yn = V("yn");
+
+  TEST_MODE(xn<1 || yn<1){
+    PLOG("\nERROR! Gis_Init: select xn,yn >= 1!");
+    ABORT
+    END_EQUATION(0.0);
+  }
+
   int wrap = V("wrap");
+  double diag_dist = sqrt( (double)xn * (double)xn + (double)yn * (double)yn);
+  WRITE("diag_dist",diag_dist);
   GIS_INIT(c->label,xn,yn,wrap)
 
   int n = COUNTS(c->up,c->label);

@@ -81,6 +81,7 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 #include "tools/utilities.h" //rnd generator, beta distribution
 #include "Advanced_LSD.cpp" //some general helpers for the backends
 
+//Macros also used in submodules!
 #define GET_ID(c) AdvLSD_FakeID(c)
 #define GET_ID_LABEL(c) AdvLSD_FakeID_Label(c).c_str()
 

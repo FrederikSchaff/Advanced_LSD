@@ -79,12 +79,17 @@ P_EXTS(ext_obj,ext_pop)->getRandomAgent(gender, (int) min_age, (int) max_age)
 #define POP_GET_RAGENTMS(ext_obj) POP_GET_RAGENTAXS(ext_obj,2,-1,-1)
 #define POP_GET_RAGENTM POP_GET_RAGENTAX(2,-1,-1)
 
+
+//Check if relation would be forbidden kinship relation
 #define POP_INCEST_CHECKXS(ext_obj,id_mother,id_father,degree) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father,degree)  //returns true if there is incest
 #define POP_INCEST_CHECKX(id_mother,id_father,degree) POP_INCEST_CHECKXS(SEARCHS(root,"Pop_Model"),id_mother,id_father,degree)
 
 #define POP_INCEST_CHECKS(ext_obj,id_mother,id_father) P_EXTS(ext_obj,ext_pop)->check_if_incest((int)id_mother,(int)id_father)  //returns true if there is incest
 #define POP_INCEST_CHECK(id_mother,id_father) POP_INCEST_CHECKS(SEARCHS(root,"Pop_Model"),id_mother,id_father)
 
+//Get information on the family degree
+#define POP_FAMILY_DEGREES(ext_obj,agent1,agent2) P_EXTS(ext_obj,ext_pop)->family_degree(GET_ID(agent1),GET_ID(agent2));
+#define POP_FAMILY_DEGREE(agent1,agent2) P_EXTS(SEARCHS(root,"Pop_Model"),ext_pop)->family_degree(GET_ID(agent1),GET_ID(agent2));
 
 
 //A set of macros in combination with pajek
