@@ -13,12 +13,12 @@ double AdvLSD_FakeVar(object *callee, const std::string& lab2);
 /***********/
 
 std::string AdvLSD_FakeID_Label(object *callee){
-  TEST_IN(true)
+  TEST_IN(true){
     if (callee==NULL){
       PLOG("\nAdvanced_LSD.cpp      ERROR in AdvLSD_FakeID_Label(): pointer is NULL");
       return NULL;
     }
-  TEST_OUT
+  }
     try{
       return std::string(std::string(callee->label)+"_ID");
     }
@@ -30,12 +30,12 @@ std::string AdvLSD_FakeID_Label(object *callee){
 
 //connect the callee label with a given string.
 std::string AdvLSD_FakeVar_Label(object *callee, const std::string& lab2){
-  TEST_IN(true)
+  TEST_IN(true){
     if (callee==NULL){
       PLOG("\nAdvanced_LSD.cpp      ERROR in AdvLSD_FakeVar_Label(): pointer is NULL");
       return NULL;
     }
-  TEST_OUT
+  }
     try{
       return std::string(std::string(callee->label)+lab2);
     }

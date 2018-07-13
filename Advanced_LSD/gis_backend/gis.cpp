@@ -74,13 +74,13 @@ This file contains the core code of the population backend.
 
 
 
-          VERBOSE_IN(true)
+          VERBOSE_IN(true){
             PLOG("\nGeography Model :   Initialising lattice of patches '%s'",patch_label);
             PLOG("\nGeography Model :   Lattice size is %i (%i x %i)",xn*yn,xn,yn);
             PLOG("\nGeography Model :   Wrapping bit-code translates to:");
             PLOG("\nGeography Model :   wrap-left: %i, wrap-right: %i, wrap-top %i, wrap-bottom %i",wrap_left,wrap_right,wrap_top,wrap_bottom);
 
-          VERBOSE_OUT
+          }
 
     // create alle the elements in the lattice, uninitialised
     patches.clear();
@@ -124,7 +124,7 @@ This file contains the core code of the population backend.
 
     //link those elements using the left / right / up / down pointers.
     //would a function be more performant? This is more flexible, we can break some links
-    TEST_IN(true && xn<5 && yn<5) //checked and ok
+    TEST_IN(true && xn<5 && yn<5){ //checked and ok
       PLOG("\nGeography Model :   Testing lattice. Format: (x,y |left,right,up,down)\n");
       ext_gis_patch *ptrPatch;
       for (int y=yn-1; y>=0; y--){
@@ -134,7 +134,7 @@ This file contains the core code of the population backend.
         }
         PLOG("\n");
       }
-    TEST_OUT
+    }
 
 
 
@@ -184,12 +184,12 @@ ext_gis_patch* ext_gis::move(ext_gis_patch* pos, const std::string& direction, b
 }
 
 object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool complete){ //move "u"p, "d"own, "r"ight or "l"eft, if possible. else return NULL.
-  TEST_IN(true) //Allow turning off for reasons of performance
+  TEST_IN(true){ //Allow turning off for reasons of performance
     if (x<0 || y<0 || x>= xn || y >= yn){
       PLOG("\nERROR Geography Model :   ext_gis::move_LSD(): Error, start position (%i,%i) is out of range",x,y);
       return NULL;
     }
-  TEST_OUT
+  }
 
   ext_gis_patch* newPos = move(&patches.at(x).at(y), direction, complete);
   if (newPos == NULL){ return NULL; } else {return newPos->LSD_counterpart;}
@@ -200,12 +200,12 @@ object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool compl
 */
 
 void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising");
     PLOG("\n target LSD Object holding lattice is: %s", _target->LSD_counterpart->label);
     PLOG("\n Search is centered at: %i, %i and radius is: %g.",_origin.x,_origin.y,_radius);
     PLOG("\n Type of search is %i",_type);
-  VERBOSE_OUT
+  }
 
   target = _target;
   origin = _origin;
@@ -222,14 +222,14 @@ void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _rad
     default: init_ssimple(); break; //if wrong argument is supplied. add check later
 
   }
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising done. Check.");
     PLOG("\n There are %i options.",valid_objects.size());
-  VERBOSE_OUT
+  }
   it_valid  = valid_objects.begin(); //initialise the iterator used in next()
-  VERBOSE_IN(false && valid_objects.size()>0)
+  VERBOSE_IN(false && valid_objects.size()>0){
     PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance);
-  VERBOSE_OUT
+  }
 }
 
 void ext_gis_rsearch::init(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type){
@@ -263,9 +263,9 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   // also check that in case of wrapping each point is tested once.
   // and that we do not end up in non-valid places when no wrapping.
 
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\nGeography Model :   ext_gis_rsearch::init_ssimple(): Defining Set.");
-  VERBOSE_OUT
+  }
 
   //In
   int xn = target->xn - 1;          //note: Locally without offset!
@@ -372,9 +372,9 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
     return t1.distance < t2.distance; //sort ascending in distance
     });
    }
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\n there are in %i options valid from %i checked.",valid_objects.size(),total);
-  VERBOSE_OUT
+  }
 
 }
 
@@ -409,23 +409,23 @@ object* ext_gis_rsearch::next(){
   //a simple iterator through the vector of pointers initialised before
   //if agents=true is given, provide the list of LSD objects currently linked
   //to the patch.
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\nGeography Model :   ext_gis_rsearch::next(): Producing next LSD object.");
     PLOG("\n total options: %i",valid_objects.size());
-  VERBOSE_OUT
+  }
   if (it_valid == valid_objects.end()){
-    VERBOSE_IN(false)
+    VERBOSE_IN(false){
       PLOG("\n We have tested all %i valid objects.",valid_objects.size());
-    TEST_OUT
+    }
     return NULL;
   } else
   {
     last = target->LSD_by_coords(*it_valid);
     last_distance = it_valid->distance;
-    VERBOSE_IN(false)
+    VERBOSE_IN(false){
       PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance);
       PLOG("\nLSD Counterpart is %s, %g,%g, id %g",last->label,GET_VAR(last,"_x"),GET_VAR(last,"_y"),GET_ID(last));
-    VERBOSE_OUT
+    }
     it_valid++;
   }
   return last;
@@ -438,23 +438,23 @@ ext_gis_coords::ext_gis_coords(int _x, int _y, double _distance){
 }
 
 void ext_gis_patch::add_LSD_agent(object* obj_to_add){
-  VERBOSE_IN(false)
+  VERBOSE_IN(false){
     PLOG("\nGeography Model :   : ext_gis_patch::add_LSD_agent : Currently there are %i objects at patch w. ID %i. Now adding object %s with ID %g",LSD_agents.size(),ID,obj_to_add->label,GET_ID(obj_to_add));
-  VERBOSE_OUT
+  }
   LSD_agents.push_back(obj_to_add);
 }
 
 bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
   //https://stackoverflow.com/a/26567766/3895476
   {
-    VERBOSE_IN(false)
+    VERBOSE_IN(false){
       PLOG("\nGeography Model :   : ext_gis_patch::remove_LSD_agent : Currently there are %i objects at patch w. ID %i. Now removing object %s with ID %g",LSD_agents.size(),ID,obj_to_remove->label,GET_ID(obj_to_remove));
-    VERBOSE_OUT
+    }
     auto it = std::find(LSD_agents.begin(), LSD_agents.end(), obj_to_remove);
     if (it != LSD_agents.end()) {
-      VERBOSE_IN(false)
+      VERBOSE_IN(false){
         PLOG("\n\t... success");
-      VERBOSE_OUT
+      }
       LSD_agents.erase(it);
       return true;
     }

@@ -84,21 +84,21 @@ PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elap
 
 
 /* To clearly mark tests and also allow to not run them */
-#define TEST_OUT }
+
 #ifndef SWITCH_TEST_OFF
-  #define TEST_IN(X) if (X) {           //Testing on
+  #define TEST_IN(X) if (X)           //Testing on
   #define TEST_ELSE } else {
 #else
-  #define TEST_IN(X) if (false && X) {  //Testing off
+  #define TEST_IN(X) if (false && X)  //Testing off
   #define TEST_ELSE
 #endif
 
 /* A verbose mode */
-#define VERBOSE_OUT }
+
 #ifndef SWITCH_VERBOSE_OFF
-  #define VERBOSE_IN(X) if (X) {          //Verbose on
+  #define VERBOSE_IN(X) if (X)          //Verbose on
 #else
-  #define VERBOSE_IN(X) if (false && X) { //Verbose off
+  #define VERBOSE_IN(X) if (false && X) //Verbose off
 #endif
 
 /* A macro to save the stats withour updating */

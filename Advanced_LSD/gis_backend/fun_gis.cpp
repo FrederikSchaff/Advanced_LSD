@@ -73,7 +73,7 @@ TRACK_SEQUENCE
     cur_p_ext=cur_p_ext->next; //move to next patch
   }
 
-  VERBOSE_IN(xn<6 && yn<6)
+  VERBOSE_IN(xn<6 && yn<6){
     int count = 0;
     PLOG("\nGIS @ LSD - testing patch assignments:\n")
     CYCLES(c->up,cur,c->label){
@@ -86,7 +86,7 @@ TRACK_SEQUENCE
       count++;
       if (count%xn == 0) {PLOG("\n");}
     }
-  VERBOSE_OUT
+  }
 
 PARAMETER
 RESULT(0)
