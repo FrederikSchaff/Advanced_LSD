@@ -71,12 +71,12 @@ TRACK_SEQUENCE
   double alpha = V("Pop_alpha");
   int n_const = int(V("Pop_const_n"));
 
-                      VERBOSE_IN(true){
+                      VERBOSE_MODE(true){
                         PLOG("\nInitialising Population model.");
                         PLOG("\n alpha: %g, beta: %g, n_const: %i",alpha,beta,n_const);
                       }
 
-                      TEST_IN( !(alpha > 1 && beta < 0) && !(alpha > 0 && alpha < 1 && beta > 0) ){
+                      TEST_MODE( !(alpha > 1 && beta < 0) && !(alpha > 0 && alpha < 1 && beta > 0) ){
                         	PLOG("\nError: alpha and beta combination not allowed!");
                         	ABORT END_EQUATION(0.0)
                       }
@@ -88,7 +88,7 @@ TRACK_SEQUENCE
   /*------*/
 
   double birth_rate = V("Pop_birth_rate");  //exogeneous, fixed (pot) birth rate
-                            VERBOSE_IN(true){
+                            VERBOSE_MODE(true){
                               PLOG("\nPopulation birth_rate is %g",birth_rate);
                             }
 
@@ -124,7 +124,7 @@ TRACK_SEQUENCE
     ext_pop_agent *ptrAgent_ext;
     int ID;
     CYCLES(p->up,ptrAgent,P_EXT(ext_pop)->agent_label){
-        TEST_IN(cur_age_idx>age.size()-1){
+        TEST_MODE(cur_age_idx>age.size()-1){
           PLOG("\nError! See line 181 in fun_templ..");
           break;
         }
@@ -135,7 +135,7 @@ TRACK_SEQUENCE
       ptrAgent_ext->age=age.at(cur_age_idx);
       WRITES(ptrAgent,GET_VAR_LABEL(ptrAgent,"_death_age"), -1); //use negative value to indicate that death is decided each single year for the initial population.
       ptrAgent_ext->death_age=-1;
-      VERBOSE_IN(false){
+      VERBOSE_MODE(false){
         PLOG("\nAdded an extension to agent %i/%i",ID,(int)VS(ptrAgent,GET_ID_LABEL(ptrAgent)));
       }
       cur_age_idx++;
@@ -167,7 +167,7 @@ FUNCTION("Pop_agent_death")
 /* Delete the provided (via FAKE CALLER) agent.*/
 TRACK_SEQUENCE
 
-                    TEST_IN(std::string(c->label)!=std::string(P_EXT(ext_pop)->agent_label)){
+                    TEST_MODE(std::string(c->label)!=std::string(P_EXT(ext_pop)->agent_label)){
                       PLOG("\nError! Trying to delete %s which is not of type %s",c->label,P_EXT(ext_pop)->agent_label);
                     }
   V_CHEATS(p->up,"Delete_Agent",c); //User specific action when an agent is deleted.
@@ -295,7 +295,7 @@ TRACK_SEQUENCE
   }
   P_EXT(ext_pop)->agents_alive_get_older();
 
-  TEST_IN(false && t<5){ //protocoll ok
+  TEST_MODE(false && t<5){ //protocoll ok
     ext_pop_agent* pAgentExt;
     cur=P_EXT(ext_pop)->getRandomAgent(2,t,t+2); //male
     PLOG("\nTest: Random agent should have gender %s and age between %i and %i","male",t,t+2);
@@ -339,7 +339,7 @@ TRACK_SEQUENCE
 
 double birth_rate = 1.0 / P_EXT(ext_pop)->expected_death; //Important: Module needs to be initialised!
 
-                              VERBOSE_IN(true){
+                              VERBOSE_MODE(true){
                                 PLOG("\nConstant population birth_rate is %g",birth_rate);
                               }
 

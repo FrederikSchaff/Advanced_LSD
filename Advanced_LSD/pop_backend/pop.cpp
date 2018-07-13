@@ -54,7 +54,7 @@ This file contains the core code of the population backend.
     n_const=_n_const;
     pop_survival_init();
 
-          VERBOSE_IN(true){
+          VERBOSE_MODE(true){
             PLOG("\nPopulation Model :   Initialising population of agents '%s'",agent_label);
             PLOG("\nPopulation Model :   Expected death with age %g",expected_death);
             PLOG("\nPopulation Model :   Max age %i",max_life);
@@ -101,7 +101,7 @@ This file contains the core code of the population backend.
       double _now = unconditional_survival_rate(cur_age);
       double _next = unconditional_survival_rate(cur_age+1);
       double _cond_hazard = 1 - _next/_now; //chance of surviving current year, conditional on survival of prior.
-                                  VERBOSE_IN(false){
+                                  VERBOSE_MODE(false){
                                     PLOG("\nPopulation Model :   Unconditional survival at cur age %i is %g. hazard rate is %g",cur_age, _next ,  _cond_hazard);
                                   }
       return  _cond_hazard ;
@@ -114,7 +114,7 @@ This file contains the core code of the population backend.
 
   bool ext_pop::agentDies(int ID){ //mark agent as dead.
     if (agents.size() > ID && ID >= 0){
-      TEST_IN(agents.at(ID).alive == false){
+      TEST_MODE(agents.at(ID).alive == false){
         PLOG("\nError! Population Model :   ext_pop::agentDies: Agent with ID %i is already dead?",ID);
       }
       agents.at(ID).LSD_counterpart=NULL;
@@ -123,12 +123,12 @@ This file contains the core code of the population backend.
       //remove the agent from the list of agents alive with (pot.) random order
       //https://stackoverflow.com/a/26567766/3895476
       {
-        VERBOSE_IN(false){
+        VERBOSE_MODE(false){
           PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from random list.",random_agents_alive.size(),ID,agents.at(ID).age);
         }
         auto it = std::find(random_agents_alive.begin(), random_agents_alive.end(), &agents.at(ID));
         if (it != random_agents_alive.end()) {
-          VERBOSE_IN(false){
+          VERBOSE_MODE(false){
             PLOG("\n\t... success");
           }
           random_agents_alive.erase(it);
@@ -140,12 +140,12 @@ This file contains the core code of the population backend.
 
       //https://stackoverflow.com/a/26567766/3895476
       {
-        VERBOSE_IN(false){
+        VERBOSE_MODE(false){
           PLOG("\nPopulation Model :   : ext_pop::agentDies : Currently there are %i agents alive. Now removing one with ID %i age %i from sorted (by age) list",byAge_agents_alive.size(),ID,agents.at(ID).age);
         }
         auto it = std::find(byAge_agents_alive.begin(), byAge_agents_alive.end(), &agents.at(ID));
         if (it != byAge_agents_alive.end()) {
-          VERBOSE_IN(false){
+          VERBOSE_MODE(false){
             PLOG("\n\t... success");
           }
           byAge_agents_alive.erase(it);
@@ -186,7 +186,7 @@ This file contains the core code of the population backend.
   int ext_pop::family_degree(int id_mother, int id_father, int max_tested_degree){
   bool verbose_logging = false;
 
-  VERBOSE_IN(verbose_logging){
+  VERBOSE_MODE(verbose_logging){
     PLOG("\nPopulation Model :   : ext_pop::check_if_incest : called with mother %i, father %i and max degree %i",id_mother,id_father,max_tested_degree);
   }
 
@@ -199,7 +199,7 @@ This file contains the core code of the population backend.
   //test if orphan
   if (id_mother < 0 && id_father < 0) { //no parents
 
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG("\nt .. full orphan");
     }
     return 0; //full orphan
@@ -222,7 +222,7 @@ This file contains the core code of the population backend.
   }
 
     //just in case...
-    TEST_IN (c_mother == NULL || c_father == NULL){
+    TEST_MODE (c_mother == NULL || c_father == NULL){
       PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Error? mother or father does not exist. No incest.");
       return -1; //flag error
     }
@@ -237,7 +237,7 @@ This file contains the core code of the population backend.
   if (c_mother->father != NULL && c_mother->father == c_father->father) {
     return 1;
   }
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG("\nt .. not siblings");
     }
   tested_degree++;
@@ -249,7 +249,7 @@ This file contains the core code of the population backend.
      ){
     return 2;
   }
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG(", nor parent-child");
     }
   tested_degree++;
@@ -268,7 +268,7 @@ This file contains the core code of the population backend.
     return 3;
   }
 
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG(", nor grandchild-grandparent");
     }
   tested_degree++;
@@ -290,7 +290,7 @@ This file contains the core code of the population backend.
      ){
     return 4;
   }
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG(", nor aunt/uncle-niece/nephew");
     }
   tested_degree++;
@@ -313,7 +313,7 @@ This file contains the core code of the population backend.
      ){
     return 5;
   }
-    VERBOSE_IN(verbose_logging){
+    VERBOSE_MODE(verbose_logging){
       PLOG(", nor cousins");
     }
   tested_degree++;
@@ -336,7 +336,7 @@ This file contains the core code of the population backend.
     int kinship_degree = family_degree(id_mother, id_father, prohibited_degree);
 
     if (kinship_degree >= prohibited_degree){
-      VERBOSE_IN(verbose_logging){
+      VERBOSE_MODE(verbose_logging){
         PLOG("\nPopulation Model :   : ext_pop::check_if_incest : Maximum forbidden degree is %i",prohibited_degree);
         switch (kinship_degree){
 
@@ -438,12 +438,12 @@ This file contains the core code of the population backend.
     if (min_age==-1 && max_age==-1){
       ext_pop_agent *pTemp = getRandomAgentExt(gender, true /*alive*/);
       if (pTemp == NULL){
-        VERBOSE_IN(true){   //It can totally happen that there is no candidate
+        VERBOSE_MODE(true){   //It can totally happen that there is no candidate
           PLOG("\npotERROR? Population Model :   getRandomAgent(): Error (?), see msgs before.");
         }
         return NULL;
       } else {
-        TEST_IN(pTemp->LSD_counterpart==NULL){
+        TEST_MODE(pTemp->LSD_counterpart==NULL){
           PLOG("\npotERROR? Population Model :   getRandomAgent(): Error (?), found a valid ext_pop_agent but with an invalid (NULL) LSD obj..");
         }
         return pTemp->LSD_counterpart;
@@ -451,12 +451,12 @@ This file contains the core code of the population backend.
     } else {
       ext_pop_agent *pTemp = getRandomAgentExtAliveAge(gender, min_age, max_age);
       if (pTemp == NULL){
-        VERBOSE_IN(true){   //It can totally happen that there is no candidate
+        VERBOSE_MODE(true){   //It can totally happen that there is no candidate
           PLOG("\npotERROR! Population Model :   getRandomAgent(): Error (?), see msgs before.");
         }
         return NULL;
       } else {
-        TEST_IN(pTemp->LSD_counterpart == NULL){
+        TEST_MODE(pTemp->LSD_counterpart == NULL){
           PLOG("\nERROR! Population Model :   getRandomAgent(): counterpart to agent with ID %i is NULL?",pTemp->ID);
         }
         return pTemp->LSD_counterpart;
@@ -469,7 +469,7 @@ This file contains the core code of the population backend.
     as in the version without AliveAge.
     To do: more efficient procedure if many calls. (and without chance to select twice the same)
   */
-    VERBOSE_IN(false){
+    VERBOSE_MODE(false){
       PLOG("\n\nPopulation Model :   getRandomAgentExtAliveAge() called with gender %s, min_age %i and max_age %i",gender==1?"female":(gender==2?"male":"unspecified"),min_age,max_age);
     }
     if (min_age > max_age){
@@ -479,7 +479,7 @@ This file contains the core code of the population backend.
     int start = -1;   //oldest person allowed
     int end = -1;     //youngest person allowed
     for (int indx = 0; indx < byAge_agents_alive.size(); indx++) {
-      TEST_IN(byAge_agents_alive.at(indx)==NULL){
+      TEST_MODE(byAge_agents_alive.at(indx)==NULL){
         PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): at indx %i byAge_agents_alive points to NULL. byAge_agents_alive.size() is %i.",indx,byAge_agents_alive.size());
       }
       if (start == -1 && byAge_agents_alive.at(indx)->age <= max_age){
@@ -490,7 +490,7 @@ This file contains the core code of the population backend.
       }
     }
     if (end == -1 || start == -1){
-      VERBOSE_IN(false){
+      VERBOSE_MODE(false){
         PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Could not find a suitable candidate.");
         if (byAge_agents_alive.size()>0) {
           PLOG("\n\t... size of byAge_agents_alive vec is %i. Oldest is %i and youngest %i",byAge_agents_alive.size(), byAge_agents_alive.front()->age,byAge_agents_alive.back()->age);
@@ -500,24 +500,24 @@ This file contains the core code of the population backend.
       }
       return NULL;
     }
-    VERBOSE_IN(false){
+    VERBOSE_MODE(false){
       PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Start: %i (age %i), end: %i (age %i)",
       start,byAge_agents_alive.at(start)->age,end,byAge_agents_alive.at(end)->age);
     }
-    TEST_IN(start == 0 || end == 0){
+    TEST_MODE(start == 0 || end == 0){
       PLOG("\nFire"); //an old check
     }
     int indx;
     ext_pop_agent* pTemp = NULL;
     for (int safeguard = 0; safeguard < 1000; safeguard++) {
       indx = int (pop_uniform() * double(end-start+1) + start );
-      TEST_IN(indx > byAge_agents_alive.size()){
+      TEST_MODE(indx > byAge_agents_alive.size()){
         PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): random draw outside of range!");
         return NULL;
       }
       pTemp = byAge_agents_alive.at(indx);
       if (gender == 0){
-        VERBOSE_IN(false){
+        VERBOSE_MODE(false){
           PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Found a candidate after %i trials. Indx %i, ID %i, age %i",
                 safeguard,indx,byAge_agents_alive.at(indx)->ID,byAge_agents_alive.at(indx)->age);
         }
@@ -525,7 +525,7 @@ This file contains the core code of the population backend.
       } else {
         int temp_gender = (pTemp->female?1:2);
         if (temp_gender == gender) {
-          VERBOSE_IN(false){
+          VERBOSE_MODE(false){
             PLOG("\nPopulation Model :   getRandomAgentExtAliveAge(): Found a candidate after %i trials. Indx %i, ID %i, age %i",
                   safeguard,indx,byAge_agents_alive.at(indx)->ID,byAge_agents_alive.at(indx)->age);
           }
@@ -533,7 +533,7 @@ This file contains the core code of the population backend.
         } //else continue!
       }
     }
-        VERBOSE_IN(true){
+        VERBOSE_MODE(true){
           PLOG("\nERROR! Population Model :   getRandomAgentExtAliveAge(): Found no candidate after 1000 trials.");
         }
 
@@ -628,11 +628,11 @@ This file contains the core code of the population backend.
         cond_cdf+=survival_rate.at(cur_age)/cum_survival_rate;
       }
       init_pop_age.at(i)=cur_age;
-//                                   VERBOSE_IN(i%int(n_agent/10)==0){
+//                                   VERBOSE_MODE(i%int(n_agent/10)==0){
 //                                   PLOG("\nPopulation Model :   Sorted agent %i has age %i and will die with age %i",i+1,age_out[i].first,age_out[i].second);
 //                                   }
     }
-    VERBOSE_IN(false & init_pop_age.size()>10){
+    VERBOSE_MODE(false & init_pop_age.size()>10){
       PLOG("\nPopulation Model :   Max age: %i, size of survival CDF: %i",max_life, survival_rate.size());
 
       PLOG("\nPopulation Model :   pop_init_age_dist(): First 10 agents age in original order is:");
@@ -641,7 +641,7 @@ This file contains the core code of the population backend.
       }
     }
     std::reverse(std::begin(init_pop_age), std::end(init_pop_age));  //make order decreasing in age.
-    VERBOSE_IN(false & init_pop_age.size()>10){
+    VERBOSE_MODE(false & init_pop_age.size()>10){
       PLOG("\nPopulation Model :   pop_init_age_dist(): First 10 agents age in FINAL order is:");
       for (int i = 0; i<10; i++){
         PLOG(" %g,",init_pop_age.at(i));
