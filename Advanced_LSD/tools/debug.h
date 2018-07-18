@@ -47,7 +47,7 @@ It also includes the other core-code files (all not fun_*)
   struct timespec local_start, local_finish;   \
   clock_gettime(CLOCK_MONOTONIC, &local_start); \
   int local_clock_id = int(local_start.tv_sec);\
-  PLOG("\ntCLOCK Setting clock with ID %i",local_clock_id);
+  PLOG("\n\tCLOCK Setting clock with ID %i",local_clock_id);
 
 #define RESET_LOCAL_CLOCK \
   local_clock_id++;\

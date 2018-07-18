@@ -212,12 +212,12 @@ TRACK_SEQUENCE
       }
     }
 
-  object *p_newAcq = ADDOBJ("Acquaintance");
+  object *p_newAcq = ADDOBJL("Acquaintance",0);
   WRITES(p_newAcq,"Acquaintance_ID",c_id);
 
   //for the c partner
   double p_id = V("Agent_ID");
-  object *c_newAcq = ADDOBJS(c,"Acquaintance");
+  object *c_newAcq = ADDOBJLS(c,"Acquaintance",0);
   WRITES(c_newAcq,"Acquaintance_ID",p_id);
 
   //link the Acquaintance objects mutually.

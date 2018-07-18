@@ -198,7 +198,7 @@ TRACK_SEQUENCE
 
       //init-and-create mode
   } else {
-    ptrAgent = ADDOBJS(c,P_EXT(ext_pop)->agent_label); //we are in creation mode - agent does not yet exist
+    ptrAgent = ADDOBJLS(c,P_EXT(ext_pop)->agent_label,0); //we are in creation mode - agent does not yet exist
     ptrAgent_ext = P_EXT(ext_pop)->newAgent(ptrAgent);
     ID = ptrAgent_ext->ID;
     WRITES(ptrAgent,GET_ID_LABEL(ptrAgent), ID);

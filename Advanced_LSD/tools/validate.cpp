@@ -163,7 +163,7 @@ namespace LSD_VALIDATE {
 
     if (has_id || first_or_last>0){
       char buffer[300];
-      sprintf(buffer,"\n%-40s -> %-32s called by %-32s %s",label_id_of_o(p).c_str(),label_of_var_of_o(var).c_str(),label_id_of_o(c,has_id).c_str(),first_last_add.c_str() );
+      sprintf(buffer,"\n%-5i : %-40s -> %-32s called by %-32s %s",t,label_id_of_o(p).c_str(),label_of_var_of_o(var).c_str(),label_id_of_o(c,has_id).c_str(),first_last_add.c_str() );
       return std::string(buffer);
     } else {
       return "";
@@ -183,7 +183,7 @@ namespace LSD_VALIDATE {
 //         PLOG("\nTRACK_SEQUENCE_MAX_T reached, simulation will pause after this step.");
 //       }
       char buffer[300];
-      sprintf(buffer,"\n%-40s -> %-32s called by %s","'Object'","'Variable'","'Calling Object'" );
+      sprintf(buffer,"\n%-5s : %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
       PLOG(buffer);
     }
     PLOG("%s\n",track_source(p,c,var,has_id).c_str());
