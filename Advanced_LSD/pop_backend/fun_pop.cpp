@@ -213,8 +213,8 @@ TRACK_SEQUENCE
   } else {
     P_EXT(ext_pop)->mother_and_child(mother_ID,ID); //Tell child its mother
   }
-  if (father_ID<0 ) {
-    PLOG("\n No father for newborn %i!",ID);
+  if (father_ID<0 && t > 1) {
+    PLOG("\n No father for newborn %i at time %i!",ID,t);
   } else {
     P_EXT(ext_pop)->father_and_child(father_ID,ID); //Tell father his child
   }
