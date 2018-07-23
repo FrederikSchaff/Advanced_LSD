@@ -48,6 +48,13 @@ template and can be left "as is" by users.
 
 /*----------------------------------------------------------------------------*/
 
+EQUATION("diag_dist")
+/* Once only, compute diagonal distance for performance reasons.*/
+TRACK_SEQUENCE
+    double diag_dist = sqrt( V("xn") * V("xn") + V("yn") * V("yn"));
+    PARAMETER
+RESULT(diag_dist)
+
 FUNCTION("Gis_Init")
 /* Initialise the population model. Called via fake-caller with c=Patch object */
 TRACK_SEQUENCE
@@ -61,8 +68,6 @@ TRACK_SEQUENCE
   }
 
   int wrap = V("wrap");
-  double diag_dist = sqrt( (double)xn * (double)xn + (double)yn * (double)yn);
-  WRITE("diag_dist",diag_dist);
   GIS_INIT(c->label,xn,yn,wrap)
 
   int n = COUNTS(c->up,c->label);
