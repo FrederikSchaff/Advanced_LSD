@@ -92,12 +92,7 @@ TRACK_SEQUENCE
                               PLOG("\nPopulation birth_rate is %g",birth_rate);
                             }
 
-  /* For efficiency only. Realocate the vector holding the pointers for each
-    agent ever existed in order to be sufficiently big for the whole run. */
-  if (n_const > 0){
-    int max_expected_entries = n_const + birth_rate*double(n_const)*double(max_step)*1.05; //extra 5%
-    P_EXT(ext_pop)->expected_total(max_expected_entries);
-  }
+
 
   /*++++++++++++++++++++++++++++++++++++++++++++*/
   /*    Initialise the age-structure

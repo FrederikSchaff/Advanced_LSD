@@ -49,11 +49,7 @@
   }
 
   ext_pop_agent* ext_pop::newAgent(object* LSD_Agent){ //create a new agent card, link the card to the agent, return the ID of the agent.
-    //Check if vector will grow and rais error if yes.
-    if (agents.size() > max_size_agents + 2 ){
-      PLOG("\nPopulation Model :   *ext_pop::newAgent() : Error! Running past preallocated memory will cause memory-leak!");
-      return NULL;
-    }
+
 
     ext_pop_agent new_agent;
     new_agent.ID = agents.size();
@@ -542,13 +538,6 @@
 
   void ext_pop::shuffle_random_agents(){
     std::shuffle(random_agents_alive.begin(),random_agents_alive.end(),pop_prng); //shuffle the whole series
-  }
-
-  /* optional*/
-
-  void ext_pop::expected_total(int n){ //increase the vector size to its final capacity. This increases performance.
-      agents.reserve(n*2);  //if already more space is allocated, nothing happens.
-      max_size_agents = n*2;
   }
 
 

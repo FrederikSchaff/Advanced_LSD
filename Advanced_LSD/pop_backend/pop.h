@@ -6,6 +6,7 @@
 ****************************************************/
 
 #include <vector>
+#include <deque>
 #include <tuple>
 #include <algorithm>
 #include <functional>
@@ -37,7 +38,7 @@ struct ext_pop_agent {
     bool alive = false;
     ext_pop_agent* father = NULL;
     ext_pop_agent* mother = NULL;
-    std::vector <ext_pop_agent*> children;
+    std::deque <ext_pop_agent*> children;
     double death_age = -1; //Age of death
 
 
@@ -61,8 +62,8 @@ class ext_pop {
     /* specific*/
 
     //For the agents alive and dead
-    std::vector<ext_pop_agent> agents; //List of agents (alive?, ID, pointer to ext_agent)
-    int max_size_agents = 0; //current method of using pointers to elements in vector is unsave. Rais Error when necessary.
+    std::deque<ext_pop_agent> agents; //List of agents (alive?, ID, pointer to ext_agent)
+
     std::vector<ext_pop_agent*> random_agents_alive; //List of all agents alive, can be randomised.
     std::vector<ext_pop_agent*> byAge_agents_alive; //List of all agents alive, decreasing in age.
     ext_pop_agent_it it_random_agents_alive;
@@ -103,7 +104,6 @@ class ext_pop {
 
 
     void shuffle_random_agents();
-    void expected_total(int n);
 
 
 };
