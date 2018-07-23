@@ -208,13 +208,17 @@ TRACK_SEQUENCE
 
   int father_ID = GET_VAR(ptrAgent,"_father");
   int mother_ID = GET_VAR(ptrAgent,"_mother");
-  if (mother_ID<0 ) {
-//     PLOG("\n No mother for newborn %i!",ID);  //perfactly legal.
+  if (mother_ID<0 ) {  //no suitable mother
+    VERBOSE_MODE ( t > 1) {
+      PLOG("\n No mother for newborn %i!",ID);  //perfactly legal.
+    }
   } else {
     P_EXT(ext_pop)->mother_and_child(mother_ID,ID); //Tell child its mother
   }
-  if (father_ID<0 && t > 1) {
-    PLOG("\n No father for newborn %i at time %i!",ID,t);
+  if (father_ID<0) { //no suitable father. also possible.
+    VERBOSE_MODE ( t > 1) {
+      PLOG("\n No father for newborn %i at time %i!",ID,t);
+    }
   } else {
     P_EXT(ext_pop)->father_and_child(father_ID,ID); //Tell father his child
   }
