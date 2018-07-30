@@ -40,22 +40,28 @@ It also includes the other core-code files (all not fun_*)
 #include <tuple>
 #include <algorithm>
 #include <functional>
+#include <deque>
 
 //#include <random>    //use LSD random number generator
 
+//ext_gis_coords is a struct that holds x and y coords and optionally a distance
 struct ext_gis_coords{
   int x,y;
   double distance;
   ext_gis_coords(int x=-1, int y=-1, double distance=-1.0); //constructor
 };
 
+
+//ext_gis_patch is the smallest "unit" in the gis layer.
+//Currently it is of fixed size. Later on this may change.
+//Currently the x,y position refer to the left border, later a right border may be added
 class ext_gis_patch {
   public:
     /*generic*/
     object* LSD_counterpart = NULL; //Link to LSD object holding this external object
 
-    int x,y; //x and y position, ranging from 0 to xn-1
-    int ID; //unique ID - x+xn*(y)
+    int x,y; //x and y position, ranging from 0 to xn-1 , the "left" or "lower" border
+    int ID; //unique ID - x+xn*(y) currently
 
     //Pointers to neighbours, lattice layout
     ext_gis_patch* up = NULL;
@@ -65,7 +71,7 @@ class ext_gis_patch {
 
     ext_gis_patch* next = NULL; //treat as one-dim row.
 
-    std::vector<object*> LSD_agents; //link to LSD objects that reside at the current patch.
+    std::deque<object*> LSD_agents; //link to LSD objects that reside at the current patch.
     bool remove_LSD_agent(object* obj_to_remove);
     void add_LSD_agent(object* obj_to_add);
 
