@@ -13,11 +13,9 @@
 
 
 
-
-//I'd like to have the pop_prng in class scope. How?
+//to do: Link to lsd prng
 
 auto pop_prng = std::mt19937 {}; //own prng which can be used with all the c++11 stuff
-//std::uniform_real_distribution<> POP_UNIFORM(0.0,1.0);    //usage: POP_UNIFORM(pop_prng)
 auto pop_uniform = std::bind(std::uniform_real_distribution<>(0.0,1.0),
                            pop_prng);
 

@@ -77,6 +77,9 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 //#include <Eigen/Eigen>
 #include "fun_head_fast.h"
 
+//to do: link to lsd rng
+// template< class tmp_prng > //template class for random number generator
+
 #include "tools/debug.h"
 #include "tools/utilities.h" //rnd generator, beta distribution
 #include "Advanced_LSD.cpp" //some general helpers for the backends
