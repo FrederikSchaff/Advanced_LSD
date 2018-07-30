@@ -163,7 +163,7 @@ namespace LSD_VALIDATE {
 
     if (has_id || first_or_last>0){
       char buffer[300];
-      sprintf(buffer,"\n%-5i : %-40s -> %-32s called by %-32s %s",t,label_id_of_o(p).c_str(),label_of_var_of_o(var).c_str(),label_id_of_o(c,has_id).c_str(),first_last_add.c_str() );
+      snprintf(buffer,sizeof(char)*300,"\n%-5i : %-40s -> %-32s called by %-32s %s",t,label_id_of_o(p).c_str(),label_of_var_of_o(var).c_str(),label_id_of_o(c,has_id).c_str(),first_last_add.c_str() );
       return std::string(buffer);
     } else {
       return "";
@@ -171,22 +171,21 @@ namespace LSD_VALIDATE {
   }
 
   int time_call = -1;
-  void track_sequence(int time, object* p, object* c=NULL, variable* var=NULL, bool has_id=true){
+  std::string track_sequence(int time, object* p, object* c=NULL, variable* var=NULL, bool has_id=true){
+    std::string track_info = "";
+    char buffer[300];
     if (time != time_call){
       time_call = time;
-      char buffer_fill[300];
-      sprintf(buffer_fill,"\n%-80s","- -- - ");
-      PLOG(buffer_fill);
-      PLOG("\n     Time is now: %i",time);
-//       if (time == TRACK_SEQUENCE_MAX_T && time != max_step) {
-//         pause_run=true;
-//         PLOG("\nTRACK_SEQUENCE_MAX_T reached, simulation will pause after this step.");
-//       }
-      char buffer[300];
-      sprintf(buffer,"\n%-5s : %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
-      PLOG(buffer);
+      snprintf(buffer,sizeof(char)*300,"\n%-80s","- -- - ");
+      track_info += string(buffer);
+      snprintf(buffer,sizeof(char)*300,"\n     Time is now: %i",time);
+      track_info += string(buffer);
+      snprintf(buffer,sizeof(char)*300,"\n%-5s : %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
+      track_info += string(buffer);
     }
-    PLOG("%s\n",track_source(p,c,var,has_id).c_str());
+    snprintf(buffer,sizeof(char)*300,"%s\n",track_source(p,c,var,has_id).c_str());
+    track_info += string(buffer);
+    return track_info;
   }
 }
 

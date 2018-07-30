@@ -39,33 +39,93 @@ It also includes the other core-code files (all not fun_*)
       //n>0 is the number of steps tracking is active
 
 /********************************************************/
-
-#include <ctime>
-
-// To get time info, see   http://stackoverflow.com/a/2962914/3895476
-#define SET_LOCAL_CLOCK \
-  struct timespec local_start, local_finish;   \
-  clock_gettime(CLOCK_MONOTONIC, &local_start); \
-  int local_clock_id = int(local_start.tv_sec);\
-  PLOG("\n\tCLOCK Setting clock with ID %i",local_clock_id);
-
-#define RESET_LOCAL_CLOCK \
-  local_clock_id++;\
-  clock_gettime(CLOCK_MONOTONIC, &local_start);\
-  local_clock_id = int(local_start.tv_sec);\
-  PLOG("\n\tCLOCK Re-setting clock with new ID %i",local_clock_id);
-
-#define REPORT_LOCAL_CLOCK    \
-{                             \
-clock_gettime(CLOCK_MONOTONIC, &local_finish);\
-double elapsed = (local_finish.tv_sec - local_start.tv_sec);\
-       elapsed += (local_finish.tv_nsec - local_start.tv_nsec) / 1000000000.0;\
-PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elapsed);\
-}
-
 #ifndef MODULE_DEBUG //GUARD
   #define MODULE_DEBUG
 #endif
+
+#include <ctime>
+#include <string>
+
+// To get time info, see   http://stackoverflow.com/a/2962914/3895476
+//The reporter also provides a string (for printing) to print data if the
+//condition is fulfilled. Only used in DirectPrint setting.
+
+#ifdef DISABLE_LOCAL_CLOCKS
+
+  #define SET_LOCAL_CLOCK_X(DirectPrint)     void(DirectPrint);
+  #define RESET_LOCAL_CLOCK_X(DirectPrint)   void(DirectPrint);
+  #define REPORT_LOCAL_CLOCK_X(mintime)         void(mintime);
+  #define ADD_LOCAL_CLOCK_INFO(text)            void(text);
+  #define ADD_LOCAL_CLOCK_TRACKSEQUENCE
+
+#else  // DISABLE_LOCAL_CLOCKS not defined
+
+  #define SET_LOCAL_CLOCK_X(DirectPrint) \
+    bool REPORT_LOCAL_CLOCK_DirectPrint = DirectPrint;\
+    std::string REPORT_LOCAL_CLOCK_report; \
+    struct timespec local_start, local_finish;   \
+    clock_gettime(CLOCK_MONOTONIC, &local_start); \
+    int local_clock_id = int(local_start.tv_sec);\
+    if (REPORT_LOCAL_CLOCK_DirectPrint) { \
+      PLOG("\n\tCLOCK Setting clock with ID %i",local_clock_id); \
+    } else { \
+      REPORT_LOCAL_CLOCK_report+="\n\tCLOCK Setting clock with ID " + std::to_string(local_clock_id); \
+    }
+
+  #define RESET_LOCAL_CLOCK_X(DirectPrint) \
+    REPORT_LOCAL_CLOCK_DirectPrint = DirectPrint;\
+    REPORT_LOCAL_CLOCK_report.clear();\
+    local_clock_id++;\
+    clock_gettime(CLOCK_MONOTONIC, &local_start);\
+    local_clock_id = int(local_start.tv_sec);\
+    if(REPORT_LOCAL_CLOCK_DirectPrint) {\
+      PLOG("\n\tCLOCK Re-setting clock with new ID %i",local_clock_id);\
+    } else { \
+      REPORT_LOCAL_CLOCK_report+="\n\tCLOCK Re-setting clock with new ID " + std::to_string(local_clock_id); \
+    }
+
+#define REPORT_LOCAL_CLOCK_X(mintime)  \
+  {                             \
+    clock_gettime(CLOCK_MONOTONIC, &local_finish);\
+    double elapsed = (local_finish.tv_sec - local_start.tv_sec);\
+           elapsed += (local_finish.tv_nsec - local_start.tv_nsec) / 1000000000.0;\
+    if (double(mintime)<elapsed){\
+      if (!REPORT_LOCAL_CLOCK_DirectPrint){ \
+        PLOG("%s",REPORT_LOCAL_CLOCK_report.c_str()); \
+      } \
+        PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elapsed);\
+    }\
+  }
+
+#define ADD_LOCAL_CLOCK_INFO(text) \
+  if (REPORT_LOCAL_CLOCK_DirectPrint){ \
+    PLOG(text); \
+  } else {    \
+    REPORT_LOCAL_CLOCK_report += string(text); \
+  }
+
+#define ADD_LOCAL_CLOCK_TRACKSEQUENCE \
+    REPORT_LOCAL_CLOCK_report += TRACK_SEQUENCE_INFO;
+
+#endif  //defined DISABLE_LOCAL_CLOCKS end
+
+
+
+#define SET_LOCAL_CLOCK                 SET_LOCAL_CLOCK_X(true)
+#define SET_LOCAL_CLOCK_RF              SET_LOCAL_CLOCK_X(false)
+
+
+
+
+#define RESET_LOCAL_CLOCK               RESET_LOCAL_CLOCK_X(true)
+#define RESET_LOCAL_CLOCK_RF            RESET_LOCAL_CLOCK_X(false)
+
+
+
+#define REPORT_LOCAL_CLOCK              REPORT_LOCAL_CLOCK_X(0.0)
+#define REPORT_LOCAL_CLOCK_CND(time)    REPORT_LOCAL_CLOCK_X(time)
+
+
 
 //in no window mode, stop all information printing
 #ifndef NO_WINDOW_TRACKING
@@ -121,16 +181,17 @@ PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elap
   #include "validate.cpp"
 //   #undef TRACK_SEQUENCE
   #define TRACK_SEQUENCE \
-  if ( t <= TRACK_SEQUENCE_MAX_T)  { LSD_VALIDATE::track_sequence(t,p,c,var); };
+  if ( t <= TRACK_SEQUENCE_MAX_T)  { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var).c_str()); };
   //   #undef TRACK_SEQUENCE_FIRST_OR_LAST
   #define TRACK_SEQUENCE_FIRST_OR_LAST \
-    if ( t <= TRACK_SEQUENCE_MAX_T)  { LSD_VALIDATE::track_sequence(t,p,c,var,false); };
-  #define TRACK_SEQUENCE_ALWAYS { LSD_VALIDATE::track_sequence(t,p,c,var); };
+    if ( t <= TRACK_SEQUENCE_MAX_T)  { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var,false).c_str()); };
+  #define TRACK_SEQUENCE_ALWAYS { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var).c_str()); };
 #else
   #define TRACK_SEQUENCE
   #define TRACK_SEQUENCE_FIRST_OR_LAST
   #define TRACK_SEQUENCE_ALWAYS
 #endif
 
-
+// a separate command to only receive the info.
+#define TRACK_SEQUENCE_INFO  LSD_VALIDATE::track_sequence(t,p,c,var).c_str()
 
