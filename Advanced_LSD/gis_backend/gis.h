@@ -165,9 +165,9 @@ class ext_gis_rsearch {
     object* next();  //provide next LSD patch object in search radius,
                     //or NULL if done.
 
-
-    //Provision to cycle through non-patch objects located in search space by label
-    std::vector<object*>::iterator it_rsearch_labelled_obj;
+//  To do: Iterate by label
+//     //Provision to cycle through non-patch objects located in search space by label
+//     std::vector<object*>::iterator it_rsearch_labelled_obj;
 
   private:
     //See: https://stackoverflow.com/a/7330341/3895476
