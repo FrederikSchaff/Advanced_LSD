@@ -10,8 +10,11 @@
 
   in the LSD model file (.sim)
 
-  - an LSD object "Patch"
+  - an LSD object "Patch" (label can differ and "Patch" is a placeholder here)
     The Patch object represents one cell in a regular grid, the geography
+    Also, this "Patch" object needs to contain two parameters for its position:
+    - "Patch_x"
+    - "Patch_y"
 
   - LSD objects/parameters to set-up the gis:
     GIS_Model       Object      The GIS_Model Object is linked to the c++ class

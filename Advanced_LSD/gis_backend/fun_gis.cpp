@@ -26,25 +26,25 @@ TRACK_SEQUENCE
   int wrap = V("GIS_wrap");
   GIS_INIT(c->label,xn,yn,wrap)
 
-  int n = COUNTS(c->up,c->label); //existing patches
-  //Add missing objects
-  ADDNOBJS(c->up,c->label,xn*yn-n);
+  int n = COUNTS(c->up,c->label); //count existing patches
+  ADDNOBJS(c->up,c->label,xn*yn-n); //Add missing objects
 
   GIS_IT_PATCH(cur_p_ext); //Get iterator to first patch
-  //Cycle through patches in LSD and backend and link them.
+
+    //Cycle through patches in LSD and backend and link them.
+    //Note: It is still possible to provide user defined c-extension for the
+    //patch
   CYCLES(c->up,cur,c->label){
     WRITES(cur,GET_ID_LABEL(cur),cur_p_ext->ID);
     cur_p_ext->LSD_counterpart=cur;
     WRITES(cur,GET_VAR_LABEL(c,"_x"),cur_p_ext->x);
     WRITES(cur,GET_VAR_LABEL(c,"_y"),cur_p_ext->y);
-
-
     cur_p_ext=cur_p_ext->next; //move to next patch
   }
 
   VERBOSE_MODE(xn<6 && yn<6){
     int count = 0;
-    PLOG("\nGIS @ LSD - testing patch assignments:\n")
+    PLOG("\nGIS @ LSD - visually testing patch assignments:\n")
     CYCLES(c->up,cur,c->label){
       int ID = VS(cur,GET_ID_LABEL(cur));
       int x = GET_VAR(cur,"_x");
