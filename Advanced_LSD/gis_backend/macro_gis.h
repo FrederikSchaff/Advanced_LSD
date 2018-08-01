@@ -5,6 +5,10 @@
   ADDEXT2S(gis_obj,ext_gis(gis_obj,gis_patch,gis_xn,gis_yn,gis_wrap));
 #define GIS_INIT(gis_patch,gis_xn,gis_yn,gis_wrap) GIS_INITS(p,gis_patch,gis_xn,gis_yn,gis_wrap)
 
+//
+#define GIS_PATCHS(gis_obj,x,y) P_EXTS(gis_obj,ext_gis)->LSD_by_coords(x,y)
+#define GIS_PATCH(x,y) GIS_PATCHS(SEARCHS(root,"GIS_Model"),x,y)
+
 //Macro to move from a given x,y pos stepwise.
 #define GIS_MOVE(x,y,direction) P_EXTS(SEARCHS(root,"GIS_Model"),ext_gis)->move_LSD(x,y,direction)
   #define GIS_MOVES(gis_obj,x,y,direction) P_EXTS(gis_obj,ext_gis)->move_LSD(x,y,direction)
