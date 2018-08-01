@@ -183,7 +183,7 @@ namespace LSD_VALIDATE {
       snprintf(buffer,sizeof(char)*300,"\n%-5s : %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
       track_info += string(buffer);
     }
-    snprintf(buffer,sizeof(char)*300,"%s\n",track_source(p,c,var,has_id).c_str());
+    snprintf(buffer,sizeof(char)*300,"%s",track_source(p,c,var,has_id).c_str());
     track_info += string(buffer);
     return track_info;
   }
