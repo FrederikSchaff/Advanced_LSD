@@ -1,34 +1,14 @@
 /*************************************************************
                                                     May 2018
+  gis.cpp : see gis.h for infos
+
   LSD Geography module - backend for LSD (least 7.0)
   written by Frederik Schaff, Ruhr-University Bochum
-
-  for infos on LSD see ...
 
 	Copyright Frederik Schaff
   This code is distributed under the GNU General Public License
 
-  The complete package has the following files:
-  [0] readme.md         ; readme file with instructions and information
-                          on the underlying model.
-  [1] fun_templ_geo.cpp ; a template file for the user model, containing the
-                          links to the population model.
-  [2] fun_LSD_geo.cpp   ; contains the LSD Equations for the population model.
-  [3] backend_geo.h     ; contains the c++ declarations and new macros.
-  [4] backend_geo.cpp   ; contains the c++ core code for the pop backend.
-  [5] backend_compability.h ; helper to link with other modules.
-
-
-  The package relies on LSD debug module by
-    F. Schaff. For further informations see: ...
-
  *************************************************************/
-
-/***************************************************
-backend_geo.cpp
-
-This file contains the core code of the population backend.
-****************************************************/
 
 #include "gis.h"
 

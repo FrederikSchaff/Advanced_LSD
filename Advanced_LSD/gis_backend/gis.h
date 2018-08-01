@@ -3,29 +3,42 @@
   LSD Geography module - backend for LSD (least 7.0)
   written by Frederik Schaff, Ruhr-University Bochum
 
-  for infos on LSD see ...
-
-	Copyright Frederik Schaff
+  Copyright Frederik Schaff
   This code is distributed under the GNU General Public License
 
-  What it does:
+  What it needs:
 
-  Link each LSD object "Patch"
+  in the LSD model file (.sim)
 
-  wrapping: there are 2^4 options. We use a bit-code (0=off):
-    0-bit: left     : 0=0 1=1
-    1-bit: right    : 0=0 1=2
-    2-bit: top      : 0=0 1=4
-    3-bit: bottom   : 0=0 1=8
+  - an LSD object "Patch"
+    The Patch object represents one cell in a regular grid, the geography
 
-    Simply sum up the options selected and pass this as argument.
+  - LSD objects/parameters to set-up the gis:
+    GIS_Model       Object      The GIS_Model Object is linked to the c++ class
+                                that provides the GIS features.
+    GIS_Init        Function    Initialises the GIS backend. See below.
+    GIS_xn          Parameter   dimension of the geo-space (x)
+    GIS_yn          Parameter   dimension of the geo-space (y)
+    GIS_wrap        Parameter   World-Wrapping, bit-code:
+                    there are 2^4 options. We use a bit-code (0=off):
+                    0-bit: left     : 0=0 1=1
+                    1-bit: right    : 0=0 1=2
+                    2-bit: top      : 0=0 1=4
+                    3-bit: bottom   : 0=0 1=8
+                    Simply sum up the options selected and pass this as argument.
+                    Examples: 0 = None, 1 = left, 2 = right, 3 (1+2) left-right,
+                    5 up, 7 down, 12 (5+7) up-down, 15 (1+2+5+7) torus.
 
-  currently, only fixed size patches are possible (EIGEN library allows for
-  sparse matrices!). However, we do not need to link the backend (i.e. potential
-  world size) to the LSD patches.
+  How to use it:
+  - Integration: The integration is explained in the readme file of AdvancedLSD
+  - Initialisation: At the very beginning of the simulation, call via FakeCaller
+    the Function GIS_Init, passing as argument any item "Patch" - the real label
+    of the "Patch" will be used from the object passed.
 
-  The patch is located on a coordinate xy system. (0,0) is bottom left,
-    (xn,yn) is top right.
+  How it works:
+  - Each LSD patch object is linked to a fixed vector situated in the
+  - The patch is located on a coordinate xy system. (0,0) is bottom left,
+    (xn-1,yn-1) is top right.
 
  *************************************************************/
 
@@ -42,7 +55,14 @@ It also includes the other core-code files (all not fun_*)
 #include <functional>
 #include <deque>
 
-//#include <random>    //use LSD random number generator
+struct ext_gis_coords; //a special type holding x and y coords and distance information
+class ext_gis_patch;  //GIS information for each patch that cannot reside in LSD
+class ext_gis; //the main gis object
+class ext_gis_rsearch; //a "radius" search object
+
+//helper
+double geo_distance(double x_1, double y_1, double x_2, double y_2);
+double geo_distance(ext_gis_coords a, ext_gis_coords b);
 
 //ext_gis_coords is a struct that holds x and y coords and optionally a distance
 struct ext_gis_coords{
@@ -181,9 +201,7 @@ class ext_gis_rsearch {
 
 };
 
-//helper
-double geo_distance(double x_1, double y_1, double x_2, double y_2);
-double geo_distance(ext_gis_coords a, ext_gis_coords b);
+
 
 
 

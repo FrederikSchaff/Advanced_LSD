@@ -1,58 +1,21 @@
 /*************************************************************
                                                     May 2018
+  fun_gis.cpp : see gis.h for infos
+
   LSD Geography module - backend for LSD (least 7.0)
   written by Frederik Schaff, Ruhr-University Bochum
-
-  for infos on LSD see ...
 
 	Copyright Frederik Schaff
   This code is distributed under the GNU General Public License
 
-  The complete package has the following files:
-  [0] readme.md         ; readme file with instructions and information
-                          on the underlying model.
-  [1] fun_templ_geo.cpp ; a template file for the user model, containing the
-                          links to the population model.
-  [2] fun_LSD_geo.cpp   ; contains the LSD Equations for the population model.
-  [3] backend_geo.h     ; contains the c++ declarations and new macros.
-  [4] backend_geo.cpp   ; contains the c++ core code for the pop backend.
-  [5] backend_compability.h ; helper to link with other modules.
-
-
-  The package relies on LSD debug module by
-    F. Schaff. For further informations see: ...
-
  *************************************************************/
 
-/***************************************************
-fun_LSD_geo.cpp
 
-This file contains all the LSD EQUATIONS that are part of the
-template and can be left "as is" by users.
-****************************************************/
-
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    In LSD Model, provide an object "Pop_Geo" which holds the following:
-
-    ++Parameterisation++
-    x_cols          Parameter   dimension of the geo-space (x)
-    y_rows          Parameter   dimension of the geo-space (y)
-    wrapping        Parameter   World-Wrapping, bit-code: 0 = None, 1 = left, 2 = right, 3 (1+2) left-right, 5 up, 7 down, 12 (5+7) up-down, 15 (1+2+5+7) torus (wrap completely).
-
-
-    ++Mechanics++
-
-
-    Under root, provide also:
-
-
-/*----------------------------------------------------------------------------*/
-
-FUNCTION("Gis_Init")
+FUNCTION("GIS_Init")
 /* Initialise the population model. Called via fake-caller with c=Patch object */
 TRACK_SEQUENCE
-  int xn = V("xn");
-  int yn = V("yn");
+  int xn = V("GIS_xn");
+  int yn = V("GIS_yn");
 
   TEST_MODE(xn<1 || yn<1){
     PLOG("\nERROR! Gis_Init: select xn,yn >= 1!");
@@ -60,10 +23,10 @@ TRACK_SEQUENCE
     END_EQUATION(0.0);
   }
 
-  int wrap = V("wrap");
+  int wrap = V("GIS_wrap");
   GIS_INIT(c->label,xn,yn,wrap)
 
-  int n = COUNTS(c->up,c->label);
+  int n = COUNTS(c->up,c->label); //existing patches
   //Add missing objects
   ADDNOBJS(c->up,c->label,xn*yn-n);
 
@@ -96,12 +59,4 @@ TRACK_SEQUENCE
 
 PARAMETER
 RESULT(0)
-
-// FUNCTION("Gis_LinkPatch")
-// /* Link existing patch to existing backend-patch. Called via fake-caller with
-// callee being the LSD object.  */
-// TRACKSEQUENCE
-//
-//
-// RESULT(0)
 
