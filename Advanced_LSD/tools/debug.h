@@ -45,6 +45,17 @@ It also includes the other core-code files (all not fun_*)
 
 #include <ctime>
 #include <string>
+#ifdef USE_GDB_DEBUG_GLOBAL
+  bool GDB_DEBUG_GLOBAL = false; //use in gdb: watch GDB_DEBUG_GLOBAL
+  //to do: measure time instead
+  #define SET_LOOP_CHECK int GDB_DEBUG_LOOP_CHECK = 0;
+  #define RESET_LOOP_CHECK GDB_DEBUG_LOOP_CHECK = 0;
+  #define CHECK_LOOP_CHECK     if (GDB_DEBUG_LOOP_CHECK++ > 100000) { GDB_DEBUG_GLOBAL=!GDB_DEBUG_GLOBAL; }
+#else
+  #define SET_LOOP_CHECK
+  #define RESET_LOOP_CHECK
+  #define CHECK_LOOP_CHECK
+#endif
 
 // To get time info, see   http://stackoverflow.com/a/2962914/3895476
 //The reporter also provides a string (for printing) to print data if the

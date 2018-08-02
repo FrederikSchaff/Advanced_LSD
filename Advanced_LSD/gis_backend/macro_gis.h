@@ -74,3 +74,12 @@ ext_gis_rsearch temp_gis_search_obj;
 
   //Needed: Iterator like for moving through associated obj with given label
   //in given neighbourhood.
+
+#define GEO_DISTANCE(x1,y1,x2,y2) geo_distance((double)x1, (double)y1, (double)x2, (double) y2)
+#define GEO_PSEUDODISTANCE(x1,y1,x2,y2) geo_pseudo_distance((double)x1, (double)y1, (double)x2, (double) y2)
+
+#define GIS_COORDS(lsd_obj) coords(GET_VAR(lsd_obj,"_x"),GET_VAR(lsd_obj,"_y") )
+
+#define GEO_DISTANCE_OBJ(obj1,obj2) geo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
+#define GEO_PSEUDODISTANCE_OBJ(obj1,obj2) geo_pseudo_distance((GIS_COORDS(obj1), GIS_COORDS(obj2))
+

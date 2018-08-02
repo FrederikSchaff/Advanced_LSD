@@ -190,6 +190,7 @@ void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _rad
   target = _target;
   origin = _origin;
   radius = _radius;
+  pseudo_radius = _radius*_radius; //we work with pseudo distance to not sqrt()
   type = _type;
 //   last = NULL;
 //   last_distance = -1;
@@ -208,7 +209,7 @@ void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _rad
   }
   it_valid  = valid_objects.begin(); //initialise the iterator used in next()
   VERBOSE_MODE(false && valid_objects.size()>0){
-    PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance);
+    PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance());
   }
 }
 
@@ -222,6 +223,10 @@ ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y,
 }
 
 ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
+  init(_target,_origin,_radius,_type);
+}
+ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius, int _type){
+  ext_gis_coords _origin(_origin_c.x,_origin_c.y);
   init(_target,_origin,_radius,_type);
 }
 
@@ -325,10 +330,10 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   for (temp.x=x_l; temp.x<=x_r; temp.x++){ //by column
     for (temp.y=y_d; temp.y<=y_u; temp.y++){ //elements in column
       total++; //checked
-      temp.distance = geo_distance(origin,temp);
+      temp.pseudo_distance = geo_pseudo_distance(origin,temp);
       tx=temp.x;
       ty=temp.y;
-      if (temp.distance<=radius){
+      if (temp.pseudo_distance<=pseudo_radius){
         if (tx<x0){
           tx = xn + tx; //temp.x < 0!
         } else if (tx>xn-1){
@@ -339,7 +344,7 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
         } else if (ty>yn-1){
           ty -= yn;
         }
-        valid_objects.push_back(ext_gis_coords(tx,ty,temp.distance) ); //add to valid objects
+        valid_objects.push_back(ext_gis_coords(tx,ty,temp.pseudo_distance) ); //add to valid objects
 //         PLOG("\n ADDING an item.");
       } else {
 //         PLOG("\n NOT Adding an item");
@@ -349,7 +354,7 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
 
   if (sorted){
     std::sort(std::begin(valid_objects),std::end(valid_objects), [](auto const &t1, auto const &t2){
-    return t1.distance < t2.distance; //sort ascending in distance
+    return t1.pseudo_distance < t2.pseudo_distance; //sort ascending in distance
     });
    }
   VERBOSE_MODE(false){
@@ -370,6 +375,9 @@ object* ext_gis::LSD_by_coords(int x, int y){ //returns the corresponding LSD pa
 object* ext_gis::LSD_by_coords(ext_gis_coords in){ //returns the corresponding LSD patch, if it exists
   return ext_gis::LSD_by_coords(in.x,in.y);
 }
+object* ext_gis::LSD_by_coords(coords in){ //returns the corresponding LSD patch, if it exists
+  return ext_gis::LSD_by_coords(in.x,in.y);
+}
 
 double geo_distance(double x_1, double y_1, double x_2, double y_2){
 /* Calculate the distance between to patches of land using Pythagorean Theorem*/
@@ -383,6 +391,28 @@ double geo_distance(double x_1, double y_1, double x_2, double y_2){
 
 double geo_distance(ext_gis_coords a, ext_gis_coords b){
   return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+}
+
+double geo_distance(coords a, coords b){
+  return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+}
+
+double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2){
+/* Calculate the pseudo distance between to patches of land using Pythagorean Theorem*/
+    double a_sq = x_1-x_2;
+    a_sq *= a_sq;
+    double b_sq = y_1-y_2;
+    b_sq *= b_sq;
+
+  return a_sq + b_sq;
+}
+
+double geo_pseudo_distance(ext_gis_coords a, ext_gis_coords b){
+  return geo_pseudo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+}
+
+double geo_pseudo_distance(coords a, coords b){
+  return geo_pseudo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
 }
 
 object* ext_gis_rsearch::next(){
@@ -401,20 +431,14 @@ object* ext_gis_rsearch::next(){
   } else
   {
     last = target->LSD_by_coords(*it_valid);
-    last_distance = it_valid->distance;
+    last_distance = it_valid->distance();
     VERBOSE_MODE(false){
-      PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance);
+      PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance());
       PLOG("\nLSD Counterpart is %s, %g,%g, id %g",last->label,GET_VAR(last,"_x"),GET_VAR(last,"_y"),GET_ID(last));
     }
     it_valid++;
   }
   return last;
-}
-
-ext_gis_coords::ext_gis_coords(int _x, int _y, double _distance){
-  x = _x;
-  y = _y;
-  distance = _distance;
 }
 
 void ext_gis_patch::add_LSD_agent(object* obj_to_add){

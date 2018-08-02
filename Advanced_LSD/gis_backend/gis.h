@@ -59,19 +59,43 @@ It also includes the other core-code files (all not fun_*)
 #include <deque>
 
 struct ext_gis_coords; //a special type holding x and y coords and distance information
+struct coords;
 class ext_gis_patch;  //GIS information for each patch that cannot reside in LSD
 class ext_gis; //the main gis object
 class ext_gis_rsearch; //a "radius" search object
 
+
 //helper
 double geo_distance(double x_1, double y_1, double x_2, double y_2);
 double geo_distance(ext_gis_coords a, ext_gis_coords b);
+double geo_distance(coords a, coords b);
+
+//sqrt(x)<sqrt(y) if x<y
+double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2);
+double geo_pseudo_distance(ext_gis_coords a, ext_gis_coords b);
+double geo_pseudo_distance(coords a, coords b);
+
+
+struct coords {
+  double x;
+  double y;
+  coords(double x, double y) : x(x), y(y) {};
+};
 
 //ext_gis_coords is a struct that holds x and y coords and optionally a distance
 struct ext_gis_coords{
   int x,y;
-  double distance;
-  ext_gis_coords(int x=-1, int y=-1, double distance=-1.0); //constructor
+  double pseudo_distance;
+  double real_distance=-1;
+  double distance(){
+    if (real_distance-1) {
+      real_distance = sqrt(pseudo_distance);
+    }
+    return pseudo_distance;
+  };
+  ext_gis_coords(int x, int y, double pseudo_distance) : x(x), y(y), pseudo_distance(pseudo_distance) {}; //constructor
+  ext_gis_coords(int x, int y) : x(x), y(y), pseudo_distance(0) {}; //constructor
+  ext_gis_coords() : x(-1),y(-1),pseudo_distance(0) {};//default constructor
 };
 
 
@@ -125,6 +149,7 @@ class ext_gis {
 
     object* LSD_by_coords(int x, int y); //returns the corresponding LSD patch, if it exists
     object* LSD_by_coords(ext_gis_coords); //returns the corresponding LSD patch, if it exists
+    object* LSD_by_coords(coords); //returns the corresponding LSD patch, if it exists
 
     ext_gis(object* counterpart, char const *_patch_label, int xn, int yn, int wrap);
     ext_gis_patch* newPatch(object* LSD_Patch);
@@ -174,16 +199,20 @@ class ext_gis_rsearch {
     double last_distance; //distance from last object to origin of search
 
 
-    int type; //Type of search. Default is 0, i.e. if an object can be reached is not checked.
+    int type; //Type of search. Default is 0, not sorted. 1 is sorted. more to come.
     double radius;
+    double pseudo_radius;
 
     std::vector <ext_gis_coords> valid_objects; //distance , coords
     std::vector<ext_gis_coords>::iterator it_valid; //simple forward iterator
     //std::vector <std::vector <bool> > search_space; //xy search space
 
     ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type=0); //each time a new search is started we create a new object.
+    ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius, int _type);
     ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type=0); //each time a new search is started we create a new object.
-    ext_gis_rsearch(){PLOG("\next_gis_rsearch() empty default initialisation called.");}; //default, does not initialise stuff.
+    ext_gis_rsearch(){
+      PLOG("\next_gis_rsearch() empty default initialisation called.");
+    }; //default, does not initialise stuff.
 
     object* next();  //provide next LSD patch object in search radius,
                     //or NULL if done.

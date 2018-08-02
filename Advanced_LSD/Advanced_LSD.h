@@ -43,7 +43,7 @@ It must be compiled AFTER the other modules have been compiled.
   #define FUNCTION EQUATION
 #endif
 
-/* Same as ADDEXT but without dealocation. This should allow to call class initialisers (?)*/
+/* Same as ADDEXT but without dealocation. This allows to call class initialisers (!)*/
 #define ADDEXT2( CLASS ) { p->cext = reinterpret_cast< void * >( new CLASS ); }
 #define ADDEXT2S( PTR, CLASS ) { PTR->cext = reinterpret_cast< void * >( new CLASS ); }
 
