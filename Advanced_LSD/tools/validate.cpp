@@ -141,7 +141,7 @@ namespace LSD_VALIDATE {
       }
 
       //next, find first object of that kind and check if it is p.
-      object* first = NULL;
+//       object* first = NULL;
       if (p!= root){
         bridge* cb = p->up->b;
         while (cb != NULL && strcmp(cb->head->label,p->label)!=0 ){ //if there is a cb->head and (only then) if this is not of the same type as p
@@ -152,7 +152,7 @@ namespace LSD_VALIDATE {
         }
         if (cb->head == p){   //p is the first of its kind
           first_or_last++;
-          first_last_add += " :: FIRST obj of its kind";
+          first_last_add = " :: FIRST obj of its kind";
         }
       }
       if (first_or_last == 2){
@@ -172,6 +172,7 @@ namespace LSD_VALIDATE {
 
   int time_call = -1;
   std::string track_sequence(int time, object* p, object* c=NULL, variable* var=NULL, bool has_id=true){
+    //of those with has_id false only the first and last element are printed
     std::string track_info = "";
     char buffer[300];
     if (time != time_call){
@@ -180,13 +181,36 @@ namespace LSD_VALIDATE {
       track_info += string(buffer);
       snprintf(buffer,sizeof(char)*300,"\n     Time is now: %i",time);
       track_info += string(buffer);
-      snprintf(buffer,sizeof(char)*300,"\n%-5s : %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
+      snprintf(buffer,sizeof(char)*300,"\n%-5s: %-40s -> %-32s called by %s","'time'","'Object'","'Variable'","'Calling Object'" );
       track_info += string(buffer);
     }
     snprintf(buffer,sizeof(char)*300,"%s",track_source(p,c,var,has_id).c_str());
     track_info += string(buffer);
     return track_info;
   }
+
+  // returns: -2 -error, -1: is root, 0: not head not last, 1: head, 2: last
+  int p_is_first_or_last_in_line(object *p){
+    if (p == root){
+      return -1; //root
+    } else if (p->next == NULL) {
+      return 2; //last
+    } else {
+      bridge* cb = p->up->b;
+      while (cb != NULL && strcmp(cb->head->label,p->label)!=0 ){ //if there is a cb->head and (only then) if this is not of the same type as p
+        cb = cb->next;
+      }
+      if (cb == NULL){
+        return -2; //does not exist
+      }
+      if (cb->head == p){
+        return 1; //is head;
+      } else {
+        return 0; //is not head
+      }
+    }
+  }
+
 }
 
 #undef ID_CHAR_BUFF

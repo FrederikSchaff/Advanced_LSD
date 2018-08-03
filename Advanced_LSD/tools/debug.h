@@ -50,7 +50,7 @@ It also includes the other core-code files (all not fun_*)
   //to do: measure time instead
   #define SET_LOOP_CHECK int GDB_DEBUG_LOOP_CHECK = 0;
   #define RESET_LOOP_CHECK GDB_DEBUG_LOOP_CHECK = 0;
-  #define CHECK_LOOP_CHECK     if (GDB_DEBUG_LOOP_CHECK++ > 100000) { GDB_DEBUG_GLOBAL=!GDB_DEBUG_GLOBAL; }
+  #define CHECK_LOOP_CHECK     if (GDB_DEBUG_LOOP_CHECK++ > 100000) { GDB_DEBUG_GLOBAL=!GDB_DEBUG_GLOBAL; PLOG("\nERROR: Very slow process!"); }
 #else
   #define SET_LOOP_CHECK
   #define RESET_LOOP_CHECK
@@ -108,12 +108,18 @@ It also includes the other core-code files (all not fun_*)
     }\
   }
 
+
 #define ADD_LOCAL_CLOCK_INFO(text) \
   if (REPORT_LOCAL_CLOCK_DirectPrint){ \
     PLOG(text); \
   } else {    \
-    REPORT_LOCAL_CLOCK_report += string(text); \
+    REPORT_LOCAL_CLOCK_report += string(text);  \
   }
+
+//       char buffer[300];  \
+//     snprintf(buffer,sizeof(char)*300,text); \
+//     REPORT_LOCAL_CLOCK_report += string(buffer); \
+// An option to pass info same as in PLOG would be nice.
 
 #define ADD_LOCAL_CLOCK_TRACKSEQUENCE \
     REPORT_LOCAL_CLOCK_report += TRACK_SEQUENCE_INFO;
@@ -121,7 +127,8 @@ It also includes the other core-code files (all not fun_*)
 #endif  //defined DISABLE_LOCAL_CLOCKS end
 
 
-
+//also there is ADD_LOCAL_CLOCK_INFO("text")   - pure text!
+//and ADD_LOCAL_CLOCK_TRACKSEQUENCE
 #define SET_LOCAL_CLOCK                 SET_LOCAL_CLOCK_X(true)
 #define SET_LOCAL_CLOCK_RF              SET_LOCAL_CLOCK_X(false)
 
@@ -195,11 +202,14 @@ It also includes the other core-code files (all not fun_*)
   if ( t <= TRACK_SEQUENCE_MAX_T)  { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var).c_str()); };
   //   #undef TRACK_SEQUENCE_FIRST_OR_LAST
   #define TRACK_SEQUENCE_FIRST_OR_LAST \
-    if ( t <= TRACK_SEQUENCE_MAX_T)  { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var,false).c_str()); };
+    if ( t <= TRACK_SEQUENCE_MAX_T )  { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var,false).c_str()); };
+  #define TRACK_SEQUENCE_FIRST_OR_LAST_ALWAYS \
+    PLOG(LSD_VALIDATE::track_sequence(t,p,c,var,false).c_str());
   #define TRACK_SEQUENCE_ALWAYS { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var).c_str()); };
 #else
   #define TRACK_SEQUENCE
   #define TRACK_SEQUENCE_FIRST_OR_LAST
+  #define TRACK_SEQUENCE_FIRST_OR_LAST_ALWAYS
   #define TRACK_SEQUENCE_ALWAYS
 #endif
 
