@@ -127,8 +127,10 @@ It also includes the other core-code files (all not fun_*)
 #endif  //defined DISABLE_LOCAL_CLOCKS end
 
 
-//also there is ADD_LOCAL_CLOCK_INFO("text")   - pure text!
-//and ADD_LOCAL_CLOCK_TRACKSEQUENCE
+/*also there is
+        ADD_LOCAL_CLOCK_INFO("text")   - pure text!
+        ADD_LOCAL_CLOCK_TRACKSEQUENCE
+*/
 #define SET_LOCAL_CLOCK                 SET_LOCAL_CLOCK_X(true)
 #define SET_LOCAL_CLOCK_RF              SET_LOCAL_CLOCK_X(false)
 

@@ -271,7 +271,7 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   //this is a simplified check mainly intended to find per se a compl. search
   //initialised with radius = -1
   if (radius >= max(target->xn,target->yn)*2) {
-    PLOG("\nCHECK: Creating complete search object");
+//     PLOG("\nCHECK: Creating complete search object");  //checked
     for (int tx=0; tx <= xn; tx++) {
       for (int ty=0; ty <= yn; ty++) {
         valid_objects.emplace_back(ext_gis_coords(tx,ty,geo_pseudo_distance(tx,ty,x,y) )); //add to valid objects
