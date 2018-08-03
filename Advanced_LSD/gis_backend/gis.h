@@ -72,6 +72,7 @@ double geo_distance(coords a, coords b);
 
 //sqrt(x)<sqrt(y) if x<y
 double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2);
+double geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2);
 double geo_pseudo_distance(ext_gis_coords a, ext_gis_coords b);
 double geo_pseudo_distance(coords a, coords b);
 
@@ -91,7 +92,7 @@ struct ext_gis_coords{
     if (real_distance-1) {
       real_distance = sqrt(pseudo_distance);
     }
-    return pseudo_distance;
+    return real_distance;
   };
   ext_gis_coords(int x, int y, double pseudo_distance) : x(x), y(y), pseudo_distance(pseudo_distance) {}; //constructor
   ext_gis_coords(int x, int y) : x(x), y(y), pseudo_distance(0) {}; //constructor
@@ -200,16 +201,16 @@ class ext_gis_rsearch {
 
 
     int type; //Type of search. Default is 0, not sorted. 1 is sorted. more to come.
-    double radius;
+    double radius;        //default: complete
     double pseudo_radius;
 
     std::vector <ext_gis_coords> valid_objects; //distance , coords
     std::vector<ext_gis_coords>::iterator it_valid; //simple forward iterator
     //std::vector <std::vector <bool> > search_space; //xy search space
 
-    ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type=0); //each time a new search is started we create a new object.
-    ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius, int _type);
-    ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type=0); //each time a new search is started we create a new object.
+    ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
+    ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius=-1, int _type=0);
+    ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
     ext_gis_rsearch(){
       PLOG("\next_gis_rsearch() empty default initialisation called.");
     }; //default, does not initialise stuff.
