@@ -5,11 +5,17 @@
 int main(){
 
     //simple test that should work
-  PAJ_INIT("Network","TestSet",3,"Test Set")
+  PAJ_MAKE_AVAILABLE
+  PAJ_INIT_ANIM("Network","TestSet",3,"Test Set")
   for (int t = 1; t<5; t++){
     for (int id=0; id<6; id++){
       PAJ_ADD_V_XY(t,id,"mopped",1,rel_pos(id+1,6),.25)
       PAJ_ADD_V_XY(t,id,"Huhn",1,rel_pos(id+1,6),.75)
+      if (t==2 && id == 3) {
+        PAJ_ADD_V_XY(t,id,"Hahn",2,rel_pos(id+1,6),.5)
+        continue;
+      }
+      PAJ_ADD_V_XY(t,id,"Hahn",1,rel_pos(id+1,6),.5)
     }
     for (int id=0; id<6; id++){
       int target = id+1<6?id+1:0;
@@ -17,6 +23,11 @@ int main(){
       PAJ_ADD_E_W(t,id,"mopped",target,"mopped",-1,"elseEdge",5)
       PAJ_ADD_A(t,target,"mopped",id,"Huhn",1,"Arc")
       PAJ_ADD_A(t,target,"mopped",id,"mopped",-1,"elseArc")
+      if (t==2 ) {
+        PAJ_ADD_A(t,target,"Hahn",id,"mopped",2,"seltsam");
+        continue;
+      }
+      PAJ_ADD_A(t,target,"Hahn",id,"mopped",1,"seltsam");
     }
   }
   PAJ_SAVE

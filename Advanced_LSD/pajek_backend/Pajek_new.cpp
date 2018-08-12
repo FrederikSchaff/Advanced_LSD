@@ -146,11 +146,13 @@ struct vertice_Attributes{
 	std::string color;
   vertice_Attributes(double value, double co_X, double co_Y, std::string shape, double x_fact, double y_fact, std::string color) : value(value), co_X(co_X), co_Y(co_Y), shape(shape), x_fact(x_fact), y_fact(y_fact), color(color) {}
 
-  std::string as_string() {
-    return  " " + std::to_string(co_X)  + " " + std::to_string(co_Y) \
-         +  " " + std::to_string(value) + " " + shape \
+  std::pair <std::string,std::string> as_string() {
+    return  std::make_pair<std::string,std::string>(  \
+            " " + std::to_string(co_X)  + " " + std::to_string(co_Y) \
+         +  " " + std::to_string(value), \
+         + " " + shape \
          + " x_fact " + std::to_string(x_fact) + " y_fact " + std::to_string(y_fact) \
-         + " ic " + color;
+         + " ic " + color);
   }
 
 };
@@ -194,13 +196,35 @@ struct Vertice{
 
   //print in pajek format
   std::string time_active_as_string() {
-    std::string temp = time_active.size()>0?"[":"";
-        for (auto ta : time_active)
-            temp += std::to_string(ta) + (ta != time_active.back()?",":"]");
-    return temp;
+    if (time_active.size()>0) {
+      std::string temp = "[";
+      int start = time_active.front();
+      int end = time_active.front();
+      temp += std::to_string(start);
+      for (auto ta : time_active) {
+        if (ta > end +1){
+          if (end > start) {
+            temp += "-" + std::to_string(end);
+          }
+          temp += ",";
+          start = ta;
+          temp += std::to_string(start);
+          end = ta;
+        } else {
+          end = ta;
+        }
+      }
+      if (start != end){
+        temp += "-" + std::to_string(end);
+      }
+      temp += "]"; //end
+      return temp;
+    } else {
+      return "";
+    }
   }
 
-  std::string as_string (int n_unique_decimals, int n_decimals, int n_total){
+  std::pair<std::string,std::string> as_string (int n_unique_decimals, int n_decimals, int n_total){
     std::string temp_label = "\"" + id_kind.get_label(n_decimals) + "\"";
     int add_space = n_total - temp_label.length();
     if (add_space > 0) {
@@ -208,8 +232,9 @@ struct Vertice{
     } else if (add_space<0)  { //else: exception..
       std::cout << "Error! Exception at Vertice.as_string() - add_space <0";
     }
-    return " " + uniqueID2string(unique_ID, n_unique_decimals) + " " + temp_label \
-        +  " " + attributes.as_string() + " " + time_active_as_string();
+      std::pair <std::string,std::string> paired_attributes = attributes.as_string();
+    return std::make_pair <std::string,std::string>(" " + uniqueID2string(unique_ID, n_unique_decimals) + " " + temp_label \
+        +  " " + paired_attributes.first, paired_attributes.second + " " + time_active_as_string());
   }
 
 };
@@ -237,11 +262,34 @@ struct Arc {
   void append(int time) { time_active.push_back(time); }
 
   //print in pajek format
+  //print in pajek format
   std::string time_active_as_string() {
-    std::string temp = time_active.size()>0?"[":"";
-        for (auto ta : time_active)
-            temp += std::to_string(ta) + (ta != time_active.back()?",":"]");
-    return temp;
+    if (time_active.size()>0) {
+      std::string temp = "[";
+      int start = time_active.front();
+      int end = time_active.front();
+      temp += std::to_string(start);
+      for (auto ta : time_active) {
+        if (ta > end +1){
+          if (end > start) {
+            temp += "-" + std::to_string(end);
+          }
+          temp += ",";
+          start = ta;
+          temp += std::to_string(start);
+          end = ta;
+        } else {
+          end = ta;
+        }
+      }
+      if (start != end){
+        temp += "-" + std::to_string(end);
+      }
+      temp += "]"; //end
+      return temp;
+    } else {
+      return "";
+    }
   }
 
   std::string as_string (int n_unique_decimals, bool forPajekToSVGAnim){
@@ -336,9 +384,20 @@ struct TimeSnap{
     output.reserve(to_reserve); //a rough estimate
     output = "*Network "  +  network_name + " in time point " + std::to_string(time) +  "\n"; //header
 		output += "*Vertices " + std::to_string(Vertices.size()) + "\n";
-    for (auto ver : Vertices) {
-//       std::cout << " " << uniqueID2string(ver.unique_ID,n_decimals) << " " << ver.id_kind.get_label() << " " << ver.id_kind.ID << " " << ver.id_kind.kind << "[";
-      output += ver.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
+//     for (auto ver : Vertices) {
+// //       std::cout << " " << uniqueID2string(ver.unique_ID,n_decimals) << " " << ver.id_kind.get_label() << " " << ver.id_kind.ID << " " << ver.id_kind.kind << "[";
+//       output += ver.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
+//     }
+    std::pair<std::string,std::string> vert_string;
+    std::string vert_string_second_former="";
+    for (auto ver : Vertices){           //do not use the map, we need the unique_ID order!
+      vert_string = ver.as_string(n_decimals_unique,n_decimals,n_label);
+      output += vert_string.first;
+      if (vert_string.second != vert_string_second_former ){
+        vert_string_second_former = vert_string.second;
+        output += vert_string.second;
+      }
+       output += "\n";
     }
 
     //edge/arcs
@@ -364,16 +423,16 @@ struct TimeSnap{
 
     //we print the info
     std::string relation_name = "";
-    std::string relation_kind = "*Edges";
-    bool curent_isEdge = true;
+    std::string relation_kind = "*Arcs";
+    bool curent_isEdge = false;
     int count_rel = 0; //ID of the relation
 
     for (auto it_Arc : sorted_arcs ){
       if (it_Arc->unique_relation.relation != relation_name ) {
         if (it_Arc->unique_relation.isEdge != curent_isEdge) {
           curent_isEdge = !curent_isEdge;
-          count_rel = 0; //reset counter, now arcs follow
-          relation_kind="*Arcs"; //change name
+          //count_rel = 0; //reset counter, now arcs follow
+          relation_kind="*Edges"; //change name
         }
         count_rel++;
         relation_name = it_Arc->unique_relation.relation;
@@ -396,6 +455,7 @@ class Pajek{
   std::string parent_folder   = "Networks"; //information of the parentfolder, relative to the program dir
   std::string set_name        = "MyNet";
   int set_id                  = 0; //the id is integer number - e.g. the seed.
+  bool initialised            = false;
 
   // the network will be given a name networ_name
   std::string network_name;
@@ -433,12 +493,30 @@ class Pajek{
 
 
 public:
+    Pajek(){ initialised = false; } //default constructor - only provide empty object
     Pajek(std::string parent_folder, std::string set_name, int set_id, std::string _network_name, bool forPajekToSVGAnim=false)
     : parent_folder(parent_folder), set_name(set_name), set_id(set_id), network_name(_network_name), forPajekToSVGAnim(forPajekToSVGAnim)
     {
       network_name += " (" + std::to_string(set_id) + ")";
+      initialised = true;
     }
 
+    void init(std::string _parent_folder, std::string _set_name, int _set_id, std::string _network_name, bool _forPajekToSVGAnim=false)
+    {
+      if ( initialised == true ){
+        std::cout << "Error! Could not Init Pajek object. It is already initialised." << std::endl;
+        return;
+      }
+      parent_folder = _parent_folder;
+      set_name=_set_name;
+      set_id=_set_id;
+      network_name=_network_name;
+      forPajekToSVGAnim=_forPajekToSVGAnim;
+      network_name += " (" + std::to_string(set_id) + ")";
+      initialised = true;
+    }
+
+  void update_set_id(int id) { set_id = id;}
   std::string partition_as_string(){
     for (auto ver : Vertices_TO){
       if (Kinds.emplace(ver.id_kind.kind).second == true){
@@ -640,8 +718,16 @@ int get_unique_TL_ID (ID_kind id_kind){
     output.reserve(to_reserve); //a rough estimate
     output = "*Network " + network_name + "\n";
 		output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
+    std::pair<std::string,std::string> vert_string;
+    std::string vert_string_second_former="";
     for (auto ver_TL: Vertices_TO){           //do not use the map, we need the unique_ID order!
-      output += ver_TL.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
+      vert_string = ver_TL.as_string(n_decimals_unique,n_decimals,n_label);
+      output += vert_string.first;
+      if (vert_string.second != vert_string_second_former ){
+        vert_string_second_former = vert_string.second;
+        output += vert_string.second;
+      }
+       output += "\n";
     }
 
     //Next edges/arcs
@@ -655,7 +741,7 @@ int get_unique_TL_ID (ID_kind id_kind){
       if (it_Arcs_TL.first.relation != relation_name ) {
         if (it_Arcs_TL.first.isEdge != curent_isEdge) {
           curent_isEdge = !curent_isEdge;
-          count_rel = 0; //reset counter, now arcs follow
+          //count_rel = 0; //reset counter, now arcs follow
           relation_kind="*Edges"; //change name
         }
         count_rel++;
@@ -718,9 +804,12 @@ int get_unique_TL_ID (ID_kind id_kind){
 };
 
 /* Some macros for simple usage in LSD and elsewhere*/
+#define PAJ_MAKE_AVAILABLE Pajek pajek_core_object;
 
-#define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      Pajek pajek_core_object(ParentFolderName,SetName,SetID,NetName);
-#define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	Pajek pajek_core_object(ParentFolderName,SetName,SetID,NetName,true);
+#define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      pajek_core_object.init(ParentFolderName,SetName,SetID,NetName);
+#define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	pajek_core_object.init(ParentFolderName,SetName,SetID,NetName,true);
+
+// #define PAJ_SET_SetID(SetID)  pajek_core_object.update_set_id(SetID);
 
 #define PAJ_SAVE    pajek_core_object.save_to_file();
 

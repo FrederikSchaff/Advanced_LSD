@@ -100,7 +100,10 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 
 #ifdef MODULE_PAJEK
   //#include "pajek_backend/pajek.cpp"
-  #include "pajek_backend/Pajek_new.cpp"
+  #include "pajek_backend/Pajek_new.cpp"   //create pajek object
+#else
+  #define PAJ_SAVE //do nothing
+  #define PAJ_MAKE_AVAILABLE //do nothing
 #endif
 
 #ifdef MODULE_GEOGRAPHY
@@ -124,4 +127,15 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 #ifdef MODULE_POPULATION
   #include "pop_backend/macro_pop.h"
 #endif
+
+//clean up
+#define OPEN_ADVANCED_LSD \
+  PAJ_MAKE_AVAILABLE
+
+#define CLOSE_ADVANCED_LSD \
+    LOG("\nSaving to pajek"); \
+    SET_LOCAL_CLOCK_RF \
+    PAJ_SAVE \
+    REPORT_LOCAL_CLOCK \
+    LOG("\nDone")
 
