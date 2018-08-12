@@ -72,7 +72,8 @@ struct ID_kind {
 		return !(a<b) && !(b<a);
 	}
 
-  std::string get_label(int n_zero = 5){
+  std::string get_label(int n_zero = 5) const
+  {
     if (label=="") {
       std::string t_label = std::to_string(ID);
       int add_zeros = n_zero - std::to_string(ID).length();
@@ -146,7 +147,8 @@ struct vertice_Attributes{
 	std::string color;
   vertice_Attributes(double value, double co_X, double co_Y, std::string shape, double x_fact, double y_fact, std::string color) : value(value), co_X(co_X), co_Y(co_Y), shape(shape), x_fact(x_fact), y_fact(y_fact), color(color) {}
 
-  std::pair <std::string,std::string> as_string() {
+  std::pair <std::string,std::string> as_string() const
+  {
     return  std::make_pair<std::string,std::string>(  \
             " " + std::to_string(co_X)  + " " + std::to_string(co_Y) \
          +  " " + std::to_string(value), \
@@ -195,13 +197,14 @@ struct Vertice{
 	}
 
   //print in pajek format
-  std::string time_active_as_string() {
+  std::string time_active_as_string() const
+  {
     if (time_active.size()>0) {
       std::string temp = "[";
       int start = time_active.front();
       int end = time_active.front();
       temp += std::to_string(start);
-      for (auto ta : time_active) {
+      for (const auto &ta : time_active) {
         if (ta > end +1){
           if (end > start) {
             temp += "-" + std::to_string(end);
@@ -224,7 +227,8 @@ struct Vertice{
     }
   }
 
-  std::pair<std::string,std::string> as_string (int n_unique_decimals, int n_decimals, int n_total){
+  std::pair<std::string,std::string> as_string (int n_unique_decimals, int n_decimals, int n_total) const
+  {
     std::string temp_label = "\"" + id_kind.get_label(n_decimals) + "\"";
     int add_space = n_total - temp_label.length();
     if (add_space > 0) {
@@ -269,7 +273,7 @@ struct Arc {
       int start = time_active.front();
       int end = time_active.front();
       temp += std::to_string(start);
-      for (auto ta : time_active) {
+      for (const auto &ta : time_active) {
         if (ta > end +1){
           if (end > start) {
             temp += "-" + std::to_string(end);
@@ -314,8 +318,9 @@ struct TimeSnap{
   TimeSnap(int time) : time(time) {}
 
     //because we need the unique ID, the q is if reducing memory reallocation (this approach) is better than reducing search time (maps approach)
-  int get_unique_ID (ID_kind id_kind){
-    for (auto ver : Vertices){
+  int get_unique_ID (ID_kind id_kind) const
+  {
+    for (const auto &ver : Vertices){
       if (ver == id_kind) {
         return ver.unique_ID;
       }
@@ -327,9 +332,9 @@ struct TimeSnap{
   #ifndef PAJEK_CONSISTENCY_CHECK_OFF
     //note: Consistency checks are slow (O(n)) - but turning them off, the speed is higher than with using maps, I supose.
 
-    bool is_exist_Relation(unique_Relation in_unique_relation)
+    bool is_exist_Relation(unique_Relation in_unique_relation) const
     {
-  		for (auto it:Arcs)
+  		for (const auto &it:Arcs)
       {
   		  if((it.unique_relation.relation==in_unique_relation.relation)&& it.unique_relation.source == in_unique_relation.source && it.unique_relation.target ==in_unique_relation.target ){
   			   return true;  //not checking for isEdge
@@ -339,13 +344,14 @@ struct TimeSnap{
     }
 
 
-    bool is_exist_Vertice(ID_kind id_kind)
+    bool is_exist_Vertice(ID_kind id_kind) const
     {
       return (std::find( Vertices.begin(), Vertices.end(), id_kind) !=  Vertices.end() );
     }
   #endif
 
-  bool add_arc(unique_Relation unique_relation,arc_Attributes attributes){
+  bool add_arc(unique_Relation unique_relation,arc_Attributes attributes)
+  {
 
     #ifndef PAJEK_CONSISTENCY_CHECK_OFF
     		if (is_exist_Vertice(unique_relation.source)==false || is_exist_Vertice(unique_relation.target)==false ){
@@ -363,7 +369,8 @@ struct TimeSnap{
   }
 
 
-  bool add_vertice(ID_kind id_kind, vertice_Attributes attributes){
+  bool add_vertice(ID_kind id_kind, vertice_Attributes attributes)
+  {
 
     #ifndef PAJEK_CONSISTENCY_CHECK_OFF  //to check for consistency, optional
   		if (is_exist_Vertice(id_kind)==true)
@@ -388,10 +395,11 @@ struct TimeSnap{
 // //       std::cout << " " << uniqueID2string(ver.unique_ID,n_decimals) << " " << ver.id_kind.get_label() << " " << ver.id_kind.ID << " " << ver.id_kind.kind << "[";
 //       output += ver.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
 //     }
-    std::pair<std::string,std::string> vert_string;
+//     std::pair<std::string,std::string> vert_string;
     std::string vert_string_second_former="";
-    for (auto ver : Vertices){           //do not use the map, we need the unique_ID order!
-      vert_string = ver.as_string(n_decimals_unique,n_decimals,n_label);
+    for (const auto &ver : Vertices){           //do not use the map, we need the unique_ID order!
+//       vert_string = ver.as_string(n_decimals_unique,n_decimals,n_label);
+      std::pair<std::string,std::string> vert_string(ver.as_string(n_decimals_unique,n_decimals,n_label));
       output += vert_string.first;
       if (vert_string.second != vert_string_second_former ){
         vert_string_second_former = vert_string.second;
@@ -427,7 +435,7 @@ struct TimeSnap{
     bool curent_isEdge = false;
     int count_rel = 0; //ID of the relation
 
-    for (auto it_Arc : sorted_arcs ){
+    for (const auto &it_Arc : sorted_arcs ){
       if (it_Arc->unique_relation.relation != relation_name ) {
         if (it_Arc->unique_relation.isEdge != curent_isEdge) {
           curent_isEdge = !curent_isEdge;
@@ -465,6 +473,41 @@ class Pajek{
 	int cur_time=-1;
   int largest_ID=0; //largest ID in all ID_kinds - to specify #decimals
   int n_label=32; //size of the labels - will be updated later
+
+  //to normalise the sizes
+  const double min_coord_offset = 0.000001; //Pajek needs the minimum to be > 0.
+  double largest_x_y=min_coord_offset;
+
+  void update_max_x_y (const double coord){
+    if (coord>largest_x_y){
+      largest_x_y=coord;
+    }
+  }
+
+  //a function to norm a coordinate. Carful: only use once
+  void norm_coord(double &coord){
+    coord /= largest_x_y;
+    if (coord < min_coord_offset){
+      coord = min_coord_offset;
+    }
+  }
+
+  bool is_normed = false;
+  void norm_coords(){
+    if (is_normed == false){
+      for (auto &ver_TO : Vertices_TO) {
+        norm_coord(ver_TO.attributes.co_X);
+        norm_coord(ver_TO.attributes.co_Y);
+      }
+      for (auto &ts : timeSnaps){
+        for (auto &ver : ts.Vertices) {
+          norm_coord(ver.attributes.co_X);
+          norm_coord(ver.attributes.co_Y);
+        }
+      }
+    }
+    is_normed = true;
+  }
 
   int n_decimals_uniqueIDs() {
     return std::to_string(Vertices_TO.size()).length();
@@ -518,10 +561,8 @@ public:
 
   void update_set_id(int id) { set_id = id;}
   std::string partition_as_string(){
-    for (auto ver : Vertices_TO){
-      if (Kinds.emplace(ver.id_kind.kind).second == true){
-//         std::cout << "added new element to set of kinds: " << ver.id_kind.kind << std::endl;
-      }
+    for (const auto &ver : Vertices_TO){
+      Kinds.emplace(ver.id_kind.kind);
     }
 
     std::string output="";
@@ -529,10 +570,10 @@ public:
     output.reserve(to_reserve); //a rough estimate
 
 
-    for (auto part_kind : Kinds){
+    for (const auto &part_kind : Kinds){
       output += "*Partition \"" + part_kind + "\"\n";
       output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
-      for (auto ver : Vertices_TO){
+      for (const auto &ver : Vertices_TO){
         output += std::to_string(ver.id_kind.kind == part_kind?1:0) + "\n";
       }
       output+= "\n";
@@ -611,7 +652,7 @@ public:
 			std::cout<<"ERROR: time error"<<std::endl;
 			return;
 		}
-
+    update_max_x_y(cor_X>cor_Y?cor_X:cor_Y); // info for the norming
     ID_kind id_kind(ID,kind,label); //bind ID and kind to ID_kind unique identifier
     //add info
 
@@ -647,7 +688,7 @@ void add_relation(int time, int source_ID, std::string source_kind,
     //1. Consistency check: Check if the kind of relation confirms with previous calls
     {
   		bool rel_exists = false;
-  		for (auto rel : Relations)
+  		for (const auto &rel : Relations)
   		{
   			if (rel.first==relation){
   				rel_exists =true;
@@ -720,7 +761,7 @@ int get_unique_TL_ID (ID_kind id_kind){
 		output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
     std::pair<std::string,std::string> vert_string;
     std::string vert_string_second_former="";
-    for (auto ver_TL: Vertices_TO){           //do not use the map, we need the unique_ID order!
+    for (const auto &ver_TL: Vertices_TO){           //do not use the map, we need the unique_ID order!
       vert_string = ver_TL.as_string(n_decimals_unique,n_decimals,n_label);
       output += vert_string.first;
       if (vert_string.second != vert_string_second_former ){
@@ -737,7 +778,7 @@ int get_unique_TL_ID (ID_kind id_kind){
     bool curent_isEdge = false;
     int count_rel = 0; //ID of the relation
 
-    for (auto it_Arcs_TL : Arcs_TO_map ){
+    for (const auto &it_Arcs_TL : Arcs_TO_map ){
       if (it_Arcs_TL.first.relation != relation_name ) {
         if (it_Arcs_TL.first.isEdge != curent_isEdge) {
           curent_isEdge = !curent_isEdge;
@@ -774,11 +815,15 @@ int get_unique_TL_ID (ID_kind id_kind){
       std::cout << "Error! Could not open output file: " << filename;
     }
 
+      //change some content - this can be more efficient if we make the structs members of Pajek
+
+    norm_coords();
+
       //write content to file
 
     pajek_file << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
-    for (auto snap : timeSnaps) {
-      pajek_file << snap.as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
+    for (auto it_snap = timeSnaps.begin(); it_snap != timeSnaps.end(); it_snap++) {
+      pajek_file << it_snap->as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
     }
     if (forPajekToSVGAnim == false) {
       pajek_file << partition_as_string();
@@ -793,8 +838,8 @@ int get_unique_TL_ID (ID_kind id_kind){
 
   void printall(){
     std::cout << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
-    for (auto snap : timeSnaps) {
-      std::cout << snap.as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
+    for (auto it_snap = timeSnaps.begin(); it_snap != timeSnaps.end(); it_snap++) {
+      std::cout << it_snap->as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
     } //snaps end
     if (forPajekToSVGAnim == false){
       std::cout << partition_as_string();
