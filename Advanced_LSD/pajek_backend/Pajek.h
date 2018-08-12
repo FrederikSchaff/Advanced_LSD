@@ -55,9 +55,9 @@
 #include <string>
 #include <cstdio>
 
-#ifndef CREATEDIR_H //only include once
-  #include "CreateDir.h" //to create dirs
-#endif
+// #ifndef CREATEDIR_H //only include once
+//   #include "CreateDir.h" //to create dirs
+// #endif
 
 /* Error and other msg's output */
 #ifndef PAJEK_MSG_OFF

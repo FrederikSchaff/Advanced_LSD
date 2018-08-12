@@ -56,9 +56,9 @@
 
 
 /* For folder creation */
-#ifndef CREATEDIR_H //only include once
-  #include "CreateDir.h" //creation of directories
-#endif
+// #ifndef CREATEDIR_H //only include once
+//   #include "CreateDir.h" //creation of directories
+// #endif
 
 /* GZIP Options */
 //#include "zstr/src/zstr.hpp"

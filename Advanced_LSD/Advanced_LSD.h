@@ -52,6 +52,8 @@ It must be compiled AFTER the other modules have been compiled.
   #define PARAMETERS(obj,label) obj->search_var(obj,label,false)->param = 1;
 #endif
 
+#include "tools/CreateDir.h" //to create dirs
+
 /*----------------------------*/
 
 // Forward, because ABMAT is not yet adjusted.
