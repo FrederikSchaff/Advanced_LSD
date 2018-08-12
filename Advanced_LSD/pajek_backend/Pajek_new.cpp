@@ -1,0 +1,741 @@
+/*
+
+  This is a completely rewritten version. Thx to Kyaw Oo for help.
+  It is part of LSDAdvanced package and falls under the same copyrights.
+
+  For more information on Pajek, etc., see the other (depreciated) files.
+  The info will move here later.
+
+  This is an early alpha version.
+
+  Copyright: Frederik Schaff, Ruhr-University Bochum
+
+*/
+
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <set>
+#include <deque>
+#include <map>
+#include <vector>
+#include <algorithm>
+
+#ifndef CREATEDIR_H //only include once
+  #include "../tools/CreateDir.h" //to create dirs
+#endif
+
+// to speed up stuff, you may define PAJEK_CONSISTENCY_CHECK_OFF
+// but then all vertices need to be created before relations between them
+#define PAJEK_CONSISTENCY_CHECK_OFF
+
+/* Some helpers */
+
+inline double rel_pos(double rank, double ranks){
+  return (rank-1)/(ranks-1);
+}
+
+
+/* CPP to Pajek below */
+
+inline std::string uniqueID2string (const int ID,const int n_decimals){
+    return std::string(n_decimals - std::to_string(ID).length(), ' ') + std::to_string(ID);
+};
+
+struct SourceTargetUnique{
+
+  int unique_ID_source;
+  int unique_ID_target;
+  SourceTargetUnique( int unique_ID_source, int unique_ID_target) : unique_ID_source(unique_ID_source),unique_ID_target(unique_ID_target) {}
+
+};
+
+struct ID_kind {
+	int ID;
+	std::string kind;
+  std::string label;
+
+	ID_kind(int ID, std::string kind, std::string label ) : ID(ID), kind(kind), label(label)  {}
+  ID_kind(int ID, std::string kind) : ID(ID), kind(kind), label("")  {}    //why move for string - any benefit?
+
+    //sort by kind, next by id
+  friend bool operator<(const ID_kind &a,const ID_kind &b){
+		if (a.kind < b.kind ) {
+      return true;
+    } else if (b.kind < a.kind) {
+      return false;
+    } else {
+      return (a.ID < b.ID );
+    }
+	}
+	friend bool operator==(const ID_kind &a,const ID_kind &b){
+		return !(a<b) && !(b<a);
+	}
+
+  std::string get_label(int n_zero = 5){
+    if (label=="") {
+      std::string t_label = std::to_string(ID);
+      int add_zeros = n_zero - std::to_string(ID).length();
+      if (add_zeros>=0) {
+        t_label = kind + "_" + std::string(add_zeros, '0') + t_label;
+      } else if (add_zeros<0)  { //else: exception..
+        std::cout << "Error! Exception at ID_kind.get_label() - add_zeros < 0";
+      }
+      return t_label;
+    } else {
+      return label;
+    }
+  }
+
+};
+
+  //to bind the source vertice (ID_kind) with the target vertice (ID_kind) and the arc/edge relation (relation).
+struct unique_Relation {
+  ID_kind source;
+  ID_kind target;
+  std::string relation;
+  bool isEdge; //each relation is either edge (unidirected) or arc (directed)
+  unique_Relation(ID_kind _source, ID_kind _target, std::string relation, bool isEdge) : source(_source), target(_target), relation(relation), isEdge(isEdge) {
+     //in case of consistency checks it is good to have edges from low to high id_kind.
+    if (isEdge==true && _target<_source){
+      std::swap(source,target);
+//       std::cout << "\nSwapped\n"; //checked and ok
+    }
+  }
+
+    //this representation is clear and easy to understand, but might be less efficient.
+  friend bool operator<(const unique_Relation &ur_a, const unique_Relation &ur_b){
+        //compare isEdge
+      if (ur_a.isEdge==false && ur_b.isEdge==true) {
+          return true;
+      } else if (ur_b.isEdge==false && ur_a.isEdge==true) {
+        return false;
+
+        //compare relation
+      } else if (ur_a.relation < ur_b.relation) {
+        return true;
+      } else if (ur_b.relation < ur_a.relation) {
+        return false;
+
+        //compare source
+      } else if (ur_a.source < ur_b.source) {
+        return true;
+      } else if (ur_b.source < ur_a.source) {
+        return false;
+
+        //compare target - final comparison!
+       } else {
+        return ur_a.target < ur_b.target;
+       }
+  }
+  friend bool operator==(const unique_Relation &ur_a, const unique_Relation &ur_b){
+    return !(ur_a<ur_b) && !(ur_b<ur_a);
+  }
+
+};
+
+//holds all the attributes of a vertice
+struct vertice_Attributes{
+  //data
+	double value;
+	double co_X;
+	double co_Y;
+  std::string shape;
+	double x_fact;
+	double y_fact;
+	std::string color;
+  vertice_Attributes(double value, double co_X, double co_Y, std::string shape, double x_fact, double y_fact, std::string color) : value(value), co_X(co_X), co_Y(co_Y), shape(shape), x_fact(x_fact), y_fact(y_fact), color(color) {}
+
+  std::string as_string() {
+    return  " " + std::to_string(co_X)  + " " + std::to_string(co_Y) \
+         +  " " + std::to_string(value) + " " + shape \
+         + " x_fact " + std::to_string(x_fact) + " y_fact " + std::to_string(y_fact) \
+         + " ic " + color;
+  }
+
+};
+
+
+struct arc_Attributes{
+
+	double value;
+	double width;
+	std::string color;
+
+  arc_Attributes(double value, double width, std::string color) : value(value),width(width),color(color) {}
+
+  std::string as_string(bool forPajekToSVGAnim) {
+    return  " "   + std::to_string(value) \
+         +  " w " + (forPajekToSVGAnim?std::to_string(int(width)) : std::to_string(width) ) \
+         +  " c " + color;
+  }
+};
+
+
+  //stores summary information
+struct Vertice{
+  int unique_ID;  //unique in setting. Differs between "Time-line" and "Time-snap" !
+	ID_kind id_kind;
+  vertice_Attributes attributes; //the TL has also attributes (static init layout)
+
+  std::deque<int> time_active; //only for timeline currently
+
+  Vertice(int unique_ID, ID_kind id_kind, vertice_Attributes attributes) : unique_ID(unique_ID), id_kind(id_kind), attributes(attributes) {}
+  void append(int time) { time_active.push_back(time); }
+
+  bool operator<(const ID_kind &id_kind_comp) const
+	{
+		return this->id_kind < id_kind_comp;
+	}
+  bool operator==(const ID_kind &id_kind_comp) const
+	{
+		return this->id_kind == id_kind_comp;
+	}
+
+  //print in pajek format
+  std::string time_active_as_string() {
+    std::string temp = time_active.size()>0?"[":"";
+        for (auto ta : time_active)
+            temp += std::to_string(ta) + (ta != time_active.back()?",":"]");
+    return temp;
+  }
+
+  std::string as_string (int n_unique_decimals, int n_decimals, int n_total){
+    std::string temp_label = "\"" + id_kind.get_label(n_decimals) + "\"";
+    int add_space = n_total - temp_label.length();
+    if (add_space > 0) {
+      temp_label = temp_label + std::string(add_space, ' ');
+    } else if (add_space<0)  { //else: exception..
+      std::cout << "Error! Exception at Vertice.as_string() - add_space <0";
+    }
+    return " " + uniqueID2string(unique_ID, n_unique_decimals) + " " + temp_label \
+        +  " " + attributes.as_string() + " " + time_active_as_string();
+  }
+
+};
+
+
+  //stores summary information
+struct Arc {
+
+  unique_Relation unique_relation; //the unique mapping identifier
+  SourceTargetUnique sourceTargetUnique;
+  arc_Attributes attributes;
+
+  std::deque<int> time_active;
+
+  Arc(unique_Relation unique_relation, SourceTargetUnique sourceTargetUnique, arc_Attributes attributes)
+        : unique_relation(unique_relation), sourceTargetUnique(sourceTargetUnique), attributes(attributes) {}
+
+  friend bool operator<(const Arc &a, const Arc &b){
+    return a.unique_relation < b.unique_relation;
+  }
+  friend bool operator==(const Arc &a, const Arc &b){
+    return a.unique_relation == b.unique_relation;
+  }
+
+  void append(int time) { time_active.push_back(time); }
+
+  //print in pajek format
+  std::string time_active_as_string() {
+    std::string temp = time_active.size()>0?"[":"";
+        for (auto ta : time_active)
+            temp += std::to_string(ta) + (ta != time_active.back()?",":"]");
+    return temp;
+  }
+
+  std::string as_string (int n_unique_decimals, bool forPajekToSVGAnim){
+    return  " " + uniqueID2string(sourceTargetUnique.unique_ID_source, n_unique_decimals) \
+        +   " " + uniqueID2string(sourceTargetUnique.unique_ID_target, n_unique_decimals) \
+        +  " " + attributes.as_string(forPajekToSVGAnim) + " " + time_active_as_string();
+  }
+
+};
+
+// struct TimeOverview{
+//
+// };
+
+struct TimeSnap{
+	int time;
+
+  //deque because pointers are never invalidated
+	std::deque<Vertice> Vertices;
+	std::deque<Arc> Arcs;
+
+  TimeSnap(int time) : time(time) {}
+
+    //because we need the unique ID, the q is if reducing memory reallocation (this approach) is better than reducing search time (maps approach)
+  int get_unique_ID (ID_kind id_kind){
+    for (auto ver : Vertices){
+      if (ver == id_kind) {
+        return ver.unique_ID;
+      }
+    }
+    std::cout << "Error in get_unique_ID: The vertice does not exist." << std::endl;
+    return -1; //error!
+  }
+
+  #ifndef PAJEK_CONSISTENCY_CHECK_OFF
+    //note: Consistency checks are slow (O(n)) - but turning them off, the speed is higher than with using maps, I supose.
+
+    bool is_exist_Relation(unique_Relation in_unique_relation)
+    {
+  		for (auto it:Arcs)
+      {
+  		  if((it.unique_relation.relation==in_unique_relation.relation)&& it.unique_relation.source == in_unique_relation.source && it.unique_relation.target ==in_unique_relation.target ){
+  			   return true;  //not checking for isEdge
+        }
+      }
+      return false;
+    }
+
+
+    bool is_exist_Vertice(ID_kind id_kind)
+    {
+      return (std::find( Vertices.begin(), Vertices.end(), id_kind) !=  Vertices.end() );
+    }
+  #endif
+
+  bool add_arc(unique_Relation unique_relation,arc_Attributes attributes){
+
+    #ifndef PAJEK_CONSISTENCY_CHECK_OFF
+    		if (is_exist_Vertice(unique_relation.source)==false || is_exist_Vertice(unique_relation.target)==false ){
+          std::cout<<"PAJEK_CONSISTENCY_CHECK: relation not added. source or target not existent."<<std::endl;
+          return false;
+        //-4. consistency check: does the exact relation exist?
+        } else if(is_exist_Relation(unique_relation)==true){
+          std::cout<<"PAJEK_CONSISTENCY_CHECK: existing relation "<<std::endl;
+          return false;
+    		}
+    #endif
+
+      Arcs.emplace_back(unique_relation,SourceTargetUnique(get_unique_ID(unique_relation.source),get_unique_ID(unique_relation.target)),attributes);
+      return true;
+  }
+
+
+  bool add_vertice(ID_kind id_kind, vertice_Attributes attributes){
+
+    #ifndef PAJEK_CONSISTENCY_CHECK_OFF  //to check for consistency, optional
+  		if (is_exist_Vertice(id_kind)==true)
+  		{
+      			std::cout<<"PAJEK_CONSISTENCY_CHECK: vertice exists already" <<std::endl;
+            return false;
+      }
+    #endif
+
+    Vertices.emplace_back(Vertices.size()+1,id_kind,attributes);
+    return true;
+  }
+
+  std::string as_string(std::string network_name, int n_decimals_unique, int n_decimals, int n_label, bool forPajekToSVGAnim)
+  {
+    std::string output;
+    size_t to_reserve = Vertices.size()*120 + Arcs.size()*60 + 50;
+    output.reserve(to_reserve); //a rough estimate
+    output = "*Network "  +  network_name + " in time point " + std::to_string(time) +  "\n"; //header
+		output += "*Vertices " + std::to_string(Vertices.size()) + "\n";
+    for (auto ver : Vertices) {
+//       std::cout << " " << uniqueID2string(ver.unique_ID,n_decimals) << " " << ver.id_kind.get_label() << " " << ver.id_kind.ID << " " << ver.id_kind.kind << "[";
+      output += ver.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
+    }
+
+    //edge/arcs
+    //procedure: we create a vector with known size and sort it to get the right structure
+    std::vector<Arc*> sorted_arcs;
+    sorted_arcs.reserve(Arcs.size());
+    for (auto& item : Arcs){
+//       auto* ptr = &item; //for some reason I cannot
+//       sorted_arcs.push_back(ptr);
+      sorted_arcs.emplace_back(&item);    //important: works only with emplace, not push_back!
+    }
+//     std::cout<<"Test 1:\n ";
+//     for (auto it_Arc : sorted_arcs ){
+//       std::cout << it_Arc->as_string(n_decimals_unique) << "\n";
+//     }
+    std::sort(sorted_arcs.begin(),sorted_arcs.end(),[](auto const &A1, auto const &A2)
+    {return *A1<*A2;} );
+
+//     std::cout<<"Test 2 - now sorted:\n ";
+//     for (auto it_Arc : sorted_arcs ){
+//       std::cout << it_Arc->as_string(n_decimals_unique) << "\n";
+//     }
+
+    //we print the info
+    std::string relation_name = "";
+    std::string relation_kind = "*Edges";
+    bool curent_isEdge = true;
+    int count_rel = 0; //ID of the relation
+
+    for (auto it_Arc : sorted_arcs ){
+      if (it_Arc->unique_relation.relation != relation_name ) {
+        if (it_Arc->unique_relation.isEdge != curent_isEdge) {
+          curent_isEdge = !curent_isEdge;
+          count_rel = 0; //reset counter, now arcs follow
+          relation_kind="*Arcs"; //change name
+        }
+        count_rel++;
+        relation_name = it_Arc->unique_relation.relation;
+        output += relation_kind + " :" + std::to_string(count_rel) + " \"" + relation_name + "\"" + "\n";
+      }
+      output += it_Arc->as_string(n_decimals_unique,forPajekToSVGAnim) + "\n";
+    }
+    output+= "\n";
+//     output.shrink_to_fit();
+//     std::cout << "String size with "<< Vertices.size() << " vertices and " << Arcs.size() << " relations is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
+    return output;
+  }
+};
+
+
+class Pajek{
+
+  //file will be saved in parent_folder / set_name / set_name _ set_id .paj
+
+  std::string parent_folder   = "Networks"; //information of the parentfolder, relative to the program dir
+  std::string set_name        = "MyNet";
+  int set_id                  = 0; //the id is integer number - e.g. the seed.
+
+  // the network will be given a name networ_name
+  std::string network_name;
+  bool forPajekToSVGAnim = false;   //width integerised, no partition tables, Edges as Arcs (one way, marked)
+
+
+	int cur_time=-1;
+  int largest_ID=0; //largest ID in all ID_kinds - to specify #decimals
+  int n_label=32; //size of the labels - will be updated later
+
+  int n_decimals_uniqueIDs() {
+    return std::to_string(Vertices_TO.size()).length();
+  }
+
+  int n_decimals_IDs() {
+    return std::to_string(largest_ID).length();
+  }
+
+
+	std::deque<TimeSnap>     timeSnaps; //dynamic data
+
+//   TimeOverview  timeOverview;      //time line overview
+  std::deque<Vertice>  Vertices_TO;
+  std::deque<Arc>      Arcs_TO;
+  std::map<ID_kind,Vertice*>       Vertices_TO_map;
+  std::map<unique_Relation,Arc*>   Arcs_TO_map;
+
+  std::set<std::string>  Kinds; //for the partition table
+
+
+#ifndef PAJEK_CONSISTENCY_CHECK_OFF  //to check for consistency, optional
+	std::deque<std::pair<std::string,bool>> Relations;//for consistency checks
+                        //relation, isEdge
+#endif
+
+
+public:
+    Pajek(std::string parent_folder, std::string set_name, int set_id, std::string _network_name, bool forPajekToSVGAnim=false)
+    : parent_folder(parent_folder), set_name(set_name), set_id(set_id), network_name(_network_name), forPajekToSVGAnim(forPajekToSVGAnim)
+    {
+      network_name += " (" + std::to_string(set_id) + ")";
+    }
+
+  std::string partition_as_string(){
+    for (auto ver : Vertices_TO){
+      if (Kinds.emplace(ver.id_kind.kind).second == true){
+//         std::cout << "added new element to set of kinds: " << ver.id_kind.kind << std::endl;
+      }
+    }
+
+    std::string output="";
+    size_t to_reserve = Vertices_TO.size()*3 + Kinds.size()*50 + 50;
+    output.reserve(to_reserve); //a rough estimate
+
+
+    for (auto part_kind : Kinds){
+      output += "*Partition \"" + part_kind + "\"\n";
+      output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
+      for (auto ver : Vertices_TO){
+        output += std::to_string(ver.id_kind.kind == part_kind?1:0) + "\n";
+      }
+      output+= "\n";
+    }
+//     output.shrink_to_fit();
+//     std::cout << "String size with "<< Vertices_TO.size() << " vertices and " << Kinds.size() << " kinds is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
+
+    return output;
+  }
+
+    //each time a vertice is added to a time snap, we also update the time line info
+  void update_vertice_TL(int time,const ID_kind &id_kind, const vertice_Attributes &attributes){
+    //check if the vertice exists
+    auto map_find =  Vertices_TO_map.find(id_kind);
+
+      //if it does not yet exist, create it and add it to the map
+    if (map_find == Vertices_TO_map.end()){
+      Vertices_TO.emplace_back(Vertices_TO.size()+1,id_kind,attributes);
+      Vertices_TO_map.emplace(id_kind,&Vertices_TO.back());
+      largest_ID = std::max(id_kind.ID,largest_ID); //update largest ID
+      if (id_kind.label>""){
+        n_label = std::max(n_label, int(id_kind.label.length()));
+      } else {
+        n_label = std::max(n_label, int(id_kind.kind.length()+std::to_string(largest_ID).length()+1));
+      }
+    }
+
+    Vertices_TO_map.at(id_kind)->append(time);
+  }
+
+    //each time an arc is added to a time snap, we also update the time line info
+  void update_arcs_TL(int time, const unique_Relation &unique_relation, const arc_Attributes &attributes){
+    //check if the vertice exists
+    auto it_map_pos = Arcs_TO_map.find(unique_relation);
+
+    if (it_map_pos == Arcs_TO_map.end()){
+      //if it does not yet exist, create it and add it to the map
+//       std::cout << "the item does not yet exist in Arcs_TO_map" << std::endl;
+      SourceTargetUnique sourceTargetUnique(get_unique_TL_ID(unique_relation.source),get_unique_TL_ID(unique_relation.target) );
+
+      if (sourceTargetUnique.unique_ID_source < 0 || sourceTargetUnique.unique_ID_target < 0){
+//         std::cout << "error: The unique relation cannot be added to Arcs_TO because the Vertice objects of source and/or target are missing!" << std::endl;
+        return;
+      }
+
+      Arcs_TO.emplace_back(unique_relation, sourceTargetUnique, attributes);
+//       std::cout << "Added the new element to Arcs_TO. Check: source is " << Arcs_TO.back().unique_relation.source.ID << "/" << Arcs_TO.back().unique_relation.source.kind << " target is "  << Arcs_TO.back().unique_relation.target.ID << "/" << Arcs_TO.back().unique_relation.target.kind << "and relation is " << Arcs_TO.back().unique_relation.relation << " of kind " << (Arcs_TO.back().unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
+
+      auto test = Arcs_TO_map.emplace(unique_relation,&Arcs_TO.back());
+      it_map_pos = test.first;
+//       std::cout << "Added the new element to Arcs_TO_map. Check: " << (test.second?" Added! ":" already there! ") <<  std::endl;
+//       std::cout << ".... Check: source is " << it_map_pos->second->unique_relation.source.ID << "/" << it_map_pos->second->unique_relation.source.kind << " target is "  << it_map_pos->second->unique_relation.target.ID << "/" << it_map_pos->second->unique_relation.target.kind << "and relation is " << it_map_pos->second->unique_relation.relation << " of kind " << (it_map_pos->second->unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
+    }
+
+    //why does it not work?
+    //Arcs_TO_map.at(unique_relation)->append(time); //for whatever reason, this does NOT work yet!
+    it_map_pos->second->append(time); //this does... cost me half a day
+
+//     std::cout<< "Is the key stored at the it pos the same as the initial key?: " << (it_map_pos->first == unique_relation ? "Yes" : "No") << std::endl;
+
+//     std::cout << "added unique relation" << std::endl;
+  }
+
+ 	void add_vertice(int time,int ID,std::string kind,double value,
+						double cor_X,double cor_Y,std::string shape, double x_fact,double y_fact, std::string color,std::string label="")
+	{
+//     std::cout << "Called add_vertice: time " << time << ", ID " << ID << ", kind " << kind << ", value " << value << " ... label " << label << std::endl;
+		if (time>cur_time ) //new time-snap
+		{		
+			cur_time=time;
+			timeSnaps.emplace_back(time);
+		}
+    //consistency check 1
+		else if (time<cur_time) //error
+		{
+			std::cout<<"ERROR: time error"<<std::endl;
+			return;
+		}
+
+    ID_kind id_kind(ID,kind,label); //bind ID and kind to ID_kind unique identifier
+    //add info
+
+    if (forPajekToSVGAnim==true){
+      if (shape == "man")
+        shape = "box";
+      else if (shape == "woman")
+        shape = "ellipse";
+    }
+
+    vertice_Attributes attributes(value,cor_X,cor_Y,shape,x_fact,y_fact,color);
+
+    if (timeSnaps.back().add_vertice(id_kind,attributes) == true ){
+//       std::cout<<"vertice added"<<std::endl;
+      update_vertice_TL(time,id_kind,attributes);
+// 		  std::cout<<"new vertice added to TL"<<std::endl;
+    }
+	}
+
+void add_relation(int time, int source_ID, std::string source_kind,
+                  int target_ID , std::string target_kind, bool isEdge, std::string relation,
+                  double value, double width ,std::string color)
+	{
+//     std::cout << "Called add_relation: time " << time << ", source ID " << source_ID << ", source kind " << source_kind
+//     std::cout << ", target ID " << target_ID << ", target kind " << target_kind << (isEdge?", (Edge) ":",(Arc) ") << ", relation" << relation << ", value " << value << " ... " << std::endl;
+    ID_kind source(source_ID,source_kind);
+    ID_kind target(target_ID,target_kind);
+
+    arc_Attributes attributes(value,width,color);
+
+    unique_Relation unique_relation(source,target,relation,isEdge);
+#ifndef PAJEK_CONSISTENCY_CHECK_OFF
+    //1. Consistency check: Check if the kind of relation confirms with previous calls
+    {
+  		bool rel_exists = false;
+  		for (auto rel : Relations)
+  		{
+  			if (rel.first==relation){
+  				rel_exists =true;
+  				if (rel.second==isEdge){
+//   					std::cout<<"PAJEK_CONSISTENCY_CHECK: relation is present and correct"<<std::endl;
+  					break;
+  				}
+  				else {
+  					std::cout<<"PAJEK_CONSISTENCY_CHECK: error: relation alreay present but different"<<std::endl;
+  					return;
+  				}
+  			}
+  		}
+
+        //if relation does not yet exist, add it to table
+  		if (rel_exists == false)
+  		{
+  			Relations.emplace_back(std::make_pair(relation,isEdge));
+//   			std::cout<< "added to Relation " << relation << (isEdge?" (Edge)":" (Arc)") << " to std::deque"<<std::endl;
+  		}
+    }//end of first consistency check
+#endif
+
+    //add edge/arc
+
+      //check if a new time-snap is necessary
+		if (time>cur_time )
+		{
+			cur_time=time;
+			timeSnaps.emplace_back(time);
+		}
+
+#ifndef PAJEK_CONSISTENCY_CHECK_OFF
+    //2. Consistency check: time as arrow?
+		else if (time<cur_time) //error
+		{
+			std::cout<<"PAJEK_CONSISTENCY_CHECK: time error at add relation cur time is"<<cur_time<<std::endl;
+			return;
+		}
+#endif
+
+    //end add relation
+    //timeSnaps.back().Arcs.emplace_back(unique_relation,SourceTargetUnique(-1,-1),attributes);   //-1,-1 -> not yet initialised
+    if (timeSnaps.back().add_arc(unique_relation,attributes) == true) {
+//       std::cout << "added relation to back. Check: source is " << timeSnaps.back().Arcs.back().unique_relation.source.ID << "/" << timeSnaps.back().Arcs.back().unique_relation.source.kind << " target is "  << timeSnaps.back().Arcs.back().unique_relation.target.ID << "/" << timeSnaps.back().Arcs.back().unique_relation.target.kind << "and relation is " << timeSnaps.back().Arcs.back().unique_relation.relation << " of kind " << (timeSnaps.back().Arcs.back().unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
+      update_arcs_TL(time, unique_relation, attributes);
+// 		  std::cout<<"relation added tot TL"<<std::endl;
+    }
+	}
+
+  //return the unique time line id of the vertice, if it exists. else return -1
+int get_unique_TL_ID (ID_kind id_kind){
+  auto map_find =  Vertices_TO_map.find(id_kind);
+
+    //if it does not yet exist, create it and add it to the map
+  if (map_find == Vertices_TO_map.end()){
+    return -1; //does not exist
+  } else {
+    return map_find->second->unique_ID;
+  }
+}
+
+
+  std::string overview_as_string(std::string network_name, int n_decimals_unique, int n_decimals, int n_label, bool forPajekToSVGAnim)
+  {
+    std::string output;
+    size_t to_reserve = Vertices_TO.size()*120 + Arcs_TO.size()*60 + 50;
+    output.reserve(to_reserve); //a rough estimate
+    output = "*Network " + network_name + "\n";
+		output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
+    for (auto ver_TL: Vertices_TO){           //do not use the map, we need the unique_ID order!
+      output += ver_TL.as_string(n_decimals_unique,n_decimals,n_label) + "\n";
+    }
+
+    //Next edges/arcs
+
+    std::string relation_name = "";
+    std::string relation_kind = "*Arcs";
+    bool curent_isEdge = false;
+    int count_rel = 0; //ID of the relation
+
+    for (auto it_Arcs_TL : Arcs_TO_map ){
+      if (it_Arcs_TL.first.relation != relation_name ) {
+        if (it_Arcs_TL.first.isEdge != curent_isEdge) {
+          curent_isEdge = !curent_isEdge;
+          count_rel = 0; //reset counter, now arcs follow
+          relation_kind="*Edges"; //change name
+        }
+        count_rel++;
+        relation_name = it_Arcs_TL.first.relation;
+        output +=  relation_kind + " :" + std::to_string(count_rel) + " \"" + relation_name + "\"" + "\n";
+      }
+      output +=  it_Arcs_TL.second->as_string(n_decimals_unique, forPajekToSVGAnim) + "\n";
+    }
+    output+= "\n";
+//     output.shrink_to_fit();
+//     std::cout << "String size with "<< Vertices_TO.size() << " vertices and " << Arcs_TO.size() << " relations is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
+
+    return output;
+  }
+
+  void save_to_file(){
+
+      //create and open file
+    if (makePath(parent_folder.c_str()) == false){
+      std::cout << "Error! Could not create parent folder: " << parent_folder;
+    }
+    std::string target_dir = parent_folder + "/" + set_name;
+    if (makePath(target_dir.c_str()) == false ){
+      std::cout << "Error! Could not create target folder: " << target_dir;
+    }
+    std::string filename = target_dir + "/" + set_name + "_" + std::to_string(set_id) + ".paj";
+    std::ofstream pajek_file;
+    pajek_file.open(filename,std::ios_base::out | std::ios_base::trunc);
+    if (pajek_file.is_open() == false){
+      std::cout << "Error! Could not open output file: " << filename;
+    }
+
+      //write content to file
+
+    pajek_file << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    for (auto snap : timeSnaps) {
+      pajek_file << snap.as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
+    }
+    if (forPajekToSVGAnim == false) {
+      pajek_file << partition_as_string();
+    }
+
+      //close file
+    pajek_file.close();
+    if (pajek_file.is_open() == true){
+      std::cout << "Error! Could not close output file: " << filename;
+    }
+  }
+
+  void printall(){
+    std::cout << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    for (auto snap : timeSnaps) {
+      std::cout << snap.as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
+    } //snaps end
+    if (forPajekToSVGAnim == false){
+      std::cout << partition_as_string();
+    }
+  }
+
+};
+
+/* Some macros for simple usage in LSD and elsewhere*/
+
+#define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      Pajek pajek_core_object(ParentFolderName,SetName,SetID,NetName);
+#define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	Pajek pajek_core_object(ParentFolderName,SetName,SetID,NetName,true);
+
+#define PAJ_SAVE    pajek_core_object.save_to_file();
+
+
+
+#define PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR);
+#define PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
+#define PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
+
+#define PAJ_ADD_V(TIME,ID,KIND,VALUE)         PAJ_ADD_V_C(TIME,ID,KIND,VALUE,0.5,0.5,"ellipse",1.0,1.0,"Black");
+#define PAJ_ADD_V_XY(TIME,ID,KIND,VALUE,X,Y)  PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,"ellipse",1.0,1.0,"Black");
+
+#define PAJ_ADD_E(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Red");
+#define PAJ_ADD_E_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Red");
+
+#define PAJ_ADD_A(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Blue");
+#define PAJ_ADD_A_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Blue");
+

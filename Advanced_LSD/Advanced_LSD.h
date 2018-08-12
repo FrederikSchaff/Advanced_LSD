@@ -99,7 +99,8 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
 
 
 #ifdef MODULE_PAJEK
-  #include "pajek_backend/pajek.cpp"
+  //#include "pajek_backend/pajek.cpp"
+  #include "pajek_backend/Pajek_new.cpp"
 #endif
 
 #ifdef MODULE_GEOGRAPHY
