@@ -25,9 +25,9 @@
   #include "../tools/CreateDir.h" //to create dirs
 #endif
 
-// to speed up stuff, you may define PAJEK_CONSISTENCY_CHECK_OFF
-// but then all vertices need to be created before relations between them
-#define PAJEK_CONSISTENCY_CHECK_OFF
+#ifndef Y0isLow
+  #define Y0isLow true //switch this off if you want to start top down instead
+#endif
 
 /* Some helpers */
 
@@ -499,12 +499,18 @@ class Pajek{
         for (auto &ver_TO : Vertices_TO) {
           norm_coord(ver_TO.attributes.co_X);
           norm_coord(ver_TO.attributes.co_Y);
+          #if Y0isLow
+          ver_TO.attributes.co_Y=1-ver_TO.attributes.co_Y;
+          #endif
         }
       }
       for (auto &ts : timeSnaps){
         for (auto &ver : ts.Vertices) {
           norm_coord(ver.attributes.co_X);
           norm_coord(ver.attributes.co_Y);
+          #if Y0isLow
+            ver.attributes.co_Y = 1-ver.attributes.co_Y;
+          #endif
         }
       }
     }
@@ -912,7 +918,7 @@ int get_unique_TL_ID (ID_kind id_kind){
       linking them. All Information needs to be provided for each time again.
 
      For debugging use the switch:
-        #define PAJEK_CONSISTENCY_CHECK_ON
+    #define PAJEK_CONSISTENCY_CHECK_ON
      before including this file.
 
   || Static Network Mode ||
@@ -927,6 +933,15 @@ int get_unique_TL_ID (ID_kind id_kind){
 
      The file that is created also holds information of the time (*_t123.net)
      When the current (local) scope is left, the Pajek object is destroyed.
+
+  || Additionl stuff ||
+
+    The SVG coordinate system starts top left. Instead, standard coordinates
+    start bottom left. This is accomplished by reflecting the coordinates and
+    then shifting them by one. If your coordinates follow the original SVG
+    specificaton
+  #define Y0isLow
+    before loading this library.
 
 */
 
