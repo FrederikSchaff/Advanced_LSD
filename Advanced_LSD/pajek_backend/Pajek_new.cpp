@@ -953,7 +953,9 @@ int get_unique_TL_ID (ID_kind id_kind){
 
 #define PAJ_SAVE    pajek_core_object.save_to_file();
 
-#define PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR);
+#define PAJ_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL)   pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL);
+
+#define PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  PAJ_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,"")
 #define PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
 #define PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
 
@@ -972,7 +974,9 @@ int get_unique_TL_ID (ID_kind id_kind){
 
 #define PAJ_S_SAVE    pajek_core_object_static.save_to_file();
 
-#define PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  pajek_core_object_static.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR);
+#define PAJ_S_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL)  pajek_core_object_static.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL);
+
+#define PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  PAJ_S_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,"")
 #define PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
 #define PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
 
