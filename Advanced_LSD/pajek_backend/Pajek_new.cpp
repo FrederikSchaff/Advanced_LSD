@@ -329,7 +329,7 @@ struct TimeSnap{
     return -1; //error!
   }
 
-  #ifndef PAJEK_CONSISTENCY_CHECK_OFF
+  #ifdef PAJEK_CONSISTENCY_CHECK_ON
     //note: Consistency checks are slow (O(n)) - but turning them off, the speed is higher than with using maps, I supose.
 
     bool is_exist_Relation(unique_Relation in_unique_relation) const
@@ -353,7 +353,7 @@ struct TimeSnap{
   bool add_arc(unique_Relation unique_relation,arc_Attributes attributes)
   {
 
-    #ifndef PAJEK_CONSISTENCY_CHECK_OFF
+    #ifdef PAJEK_CONSISTENCY_CHECK_ON
     		if (is_exist_Vertice(unique_relation.source)==false || is_exist_Vertice(unique_relation.target)==false ){
           std::cout<<"PAJEK_CONSISTENCY_CHECK: relation not added. source or target not existent."<<std::endl;
           return false;
@@ -372,7 +372,7 @@ struct TimeSnap{
   bool add_vertice(ID_kind id_kind, vertice_Attributes attributes)
   {
 
-    #ifndef PAJEK_CONSISTENCY_CHECK_OFF  //to check for consistency, optional
+    #ifdef PAJEK_CONSISTENCY_CHECK_ON  //to check for consistency, optional
   		if (is_exist_Vertice(id_kind)==true)
   		{
       			std::cout<<"PAJEK_CONSISTENCY_CHECK: vertice exists already" <<std::endl;
@@ -468,7 +468,7 @@ class Pajek{
   // the network will be given a name networ_name
   std::string network_name;
   bool forPajekToSVGAnim = false;   //width integerised, no partition tables, Edges as Arcs (one way, marked)
-
+  bool staticNetMode     = false; //a switch. One may also use pajek to create a single file (.net)
 
 	int cur_time=-1;
   int largest_ID=0; //largest ID in all ID_kinds - to specify #decimals
@@ -492,12 +492,14 @@ class Pajek{
     }
   }
 
-  bool is_normed = false;
+  bool is_norm_coords = false;
   void norm_coords(){
-    if (is_normed == false){
-      for (auto &ver_TO : Vertices_TO) {
-        norm_coord(ver_TO.attributes.co_X);
-        norm_coord(ver_TO.attributes.co_Y);
+    if (is_norm_coords == false){
+      if (staticNetMode == false) {
+        for (auto &ver_TO : Vertices_TO) {
+          norm_coord(ver_TO.attributes.co_X);
+          norm_coord(ver_TO.attributes.co_Y);
+        }
       }
       for (auto &ts : timeSnaps){
         for (auto &ver : ts.Vertices) {
@@ -506,11 +508,34 @@ class Pajek{
         }
       }
     }
-    is_normed = true;
+    is_norm_coords = true;
+  }
+
+  bool is_norm_id_label_length = false;
+  void norm_id_label_length(){
+    auto it_ver = Vertices_TO.begin();
+    auto ver_end = Vertices_TO.end();
+    if (staticNetMode == true ) {
+      it_ver = timeSnaps.at(0).Vertices.begin();
+      ver_end = timeSnaps.at(0).Vertices.end();
+    }
+    for (;it_ver < ver_end; it_ver++){
+      largest_ID = std::max(it_ver->id_kind.ID,largest_ID); //update largest ID
+      if (it_ver->id_kind.label>""){
+        n_label = std::max(n_label, int(it_ver->id_kind.label.length()));
+      } else {
+        n_label = std::max(n_label, int(it_ver->id_kind.kind.length()+std::to_string(largest_ID).length()+1));
+      }
+    }
+    is_norm_id_label_length = true;
   }
 
   int n_decimals_uniqueIDs() {
-    return std::to_string(Vertices_TO.size()).length();
+    if (staticNetMode == false ) {
+      return std::to_string(Vertices_TO.size()).length();
+    } else {
+      return std::to_string(timeSnaps.at(0).Vertices.size()).length();
+    }
   }
 
   int n_decimals_IDs() {
@@ -529,7 +554,7 @@ class Pajek{
   std::set<std::string>  Kinds; //for the partition table
 
 
-#ifndef PAJEK_CONSISTENCY_CHECK_OFF  //to check for consistency, optional
+#ifdef PAJEK_CONSISTENCY_CHECK_ON  //to check for consistency, optional
 	std::deque<std::pair<std::string,bool>> Relations;//for consistency checks
                         //relation, isEdge
 #endif
@@ -537,14 +562,14 @@ class Pajek{
 
 public:
     Pajek(){ initialised = false; } //default constructor - only provide empty object
-    Pajek(std::string parent_folder, std::string set_name, int set_id, std::string _network_name, bool forPajekToSVGAnim=false)
-    : parent_folder(parent_folder), set_name(set_name), set_id(set_id), network_name(_network_name), forPajekToSVGAnim(forPajekToSVGAnim)
+    Pajek(std::string parent_folder, std::string set_name, int set_id, std::string _network_name, bool forPajekToSVGAnim=false, bool staticNetMode=false)
+    : parent_folder(parent_folder), set_name(set_name), set_id(set_id), network_name(_network_name), forPajekToSVGAnim(forPajekToSVGAnim), staticNetMode(staticNetMode)
     {
       network_name += " (" + std::to_string(set_id) + ")";
       initialised = true;
     }
 
-    void init(std::string _parent_folder, std::string _set_name, int _set_id, std::string _network_name, bool _forPajekToSVGAnim=false)
+    void init(std::string _parent_folder, std::string _set_name, int _set_id, std::string _network_name, bool _forPajekToSVGAnim=false, bool _staticNetMode=false)
     {
       if ( initialised == true ){
         std::cout << "Error! Could not Init Pajek object. It is already initialised." << std::endl;
@@ -555,6 +580,7 @@ public:
       set_id=_set_id;
       network_name=_network_name;
       forPajekToSVGAnim=_forPajekToSVGAnim;
+      staticNetMode = _staticNetMode;
       network_name += " (" + std::to_string(set_id) + ")";
       initialised = true;
     }
@@ -593,12 +619,13 @@ public:
     if (map_find == Vertices_TO_map.end()){
       Vertices_TO.emplace_back(Vertices_TO.size()+1,id_kind,attributes);
       Vertices_TO_map.emplace(id_kind,&Vertices_TO.back());
-      largest_ID = std::max(id_kind.ID,largest_ID); //update largest ID
-      if (id_kind.label>""){
-        n_label = std::max(n_label, int(id_kind.label.length()));
-      } else {
-        n_label = std::max(n_label, int(id_kind.kind.length()+std::to_string(largest_ID).length()+1));
-      }
+//       largest_ID = std::max(id_kind.ID,largest_ID); //update largest ID
+//       if (id_kind.label>""){
+//         n_label = std::max(n_label, int(id_kind.label.length()));
+//       } else {
+//         n_label = std::max(n_label, int(id_kind.kind.length()+std::to_string(largest_ID).length()+1));
+//       }
+//take out and make a function, like the norm_coords, of it. Necessary for the static version.
     }
 
     Vertices_TO_map.at(id_kind)->append(time);
@@ -667,7 +694,9 @@ public:
 
     if (timeSnaps.back().add_vertice(id_kind,attributes) == true ){
 //       std::cout<<"vertice added"<<std::endl;
-      update_vertice_TL(time,id_kind,attributes);
+      if (staticNetMode == false) {
+        update_vertice_TL(time,id_kind,attributes);
+      }
 // 		  std::cout<<"new vertice added to TL"<<std::endl;
     }
 	}
@@ -684,7 +713,7 @@ void add_relation(int time, int source_ID, std::string source_kind,
     arc_Attributes attributes(value,width,color);
 
     unique_Relation unique_relation(source,target,relation,isEdge);
-#ifndef PAJEK_CONSISTENCY_CHECK_OFF
+#ifdef PAJEK_CONSISTENCY_CHECK_ON
     //1. Consistency check: Check if the kind of relation confirms with previous calls
     {
   		bool rel_exists = false;
@@ -721,7 +750,7 @@ void add_relation(int time, int source_ID, std::string source_kind,
 			timeSnaps.emplace_back(time);
 		}
 
-#ifndef PAJEK_CONSISTENCY_CHECK_OFF
+#ifdef PAJEK_CONSISTENCY_CHECK_ON
     //2. Consistency check: time as arrow?
 		else if (time<cur_time) //error
 		{
@@ -732,10 +761,13 @@ void add_relation(int time, int source_ID, std::string source_kind,
 
     //end add relation
     //timeSnaps.back().Arcs.emplace_back(unique_relation,SourceTargetUnique(-1,-1),attributes);   //-1,-1 -> not yet initialised
-    if (timeSnaps.back().add_arc(unique_relation,attributes) == true) {
+    bool addedArc = timeSnaps.back().add_arc(unique_relation,attributes);
+    if (addedArc == true) {
 //       std::cout << "added relation to back. Check: source is " << timeSnaps.back().Arcs.back().unique_relation.source.ID << "/" << timeSnaps.back().Arcs.back().unique_relation.source.kind << " target is "  << timeSnaps.back().Arcs.back().unique_relation.target.ID << "/" << timeSnaps.back().Arcs.back().unique_relation.target.kind << "and relation is " << timeSnaps.back().Arcs.back().unique_relation.relation << " of kind " << (timeSnaps.back().Arcs.back().unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
+      if (staticNetMode == false) {
       update_arcs_TL(time, unique_relation, attributes);
 // 		  std::cout<<"relation added tot TL"<<std::endl;
+      }
     }
 	}
 
@@ -808,7 +840,11 @@ int get_unique_TL_ID (ID_kind id_kind){
     if (makePath(target_dir.c_str()) == false ){
       std::cout << "Error! Could not create target folder: " << target_dir;
     }
-    std::string filename = target_dir + "/" + set_name + "_" + std::to_string(set_id) + ".paj";
+    std::string filetype = ".paj";
+    if (staticNetMode == true) {
+      filetype = "_t" + std::to_string(cur_time) +".net";
+    }
+    std::string filename = target_dir + "/" + set_name + "_" + std::to_string(set_id) + filetype;
     std::ofstream pajek_file;
     pajek_file.open(filename,std::ios_base::out | std::ios_base::trunc);
     if (pajek_file.is_open() == false){
@@ -818,10 +854,15 @@ int get_unique_TL_ID (ID_kind id_kind){
       //change some content - this can be more efficient if we make the structs members of Pajek
 
     norm_coords();
+    norm_id_label_length();
+
+    //In case of the static mode, we need to update some information first-
 
       //write content to file
 
-    pajek_file << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    if (staticNetMode == false) {
+      pajek_file << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    }
     for (auto it_snap = timeSnaps.begin(); it_snap != timeSnaps.end(); it_snap++) {
       pajek_file << it_snap->as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
     }
@@ -837,7 +878,9 @@ int get_unique_TL_ID (ID_kind id_kind){
   }
 
   void printall(){
-    std::cout << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    if (staticNetMode == false) {
+      std::cout << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
+    }
     for (auto it_snap = timeSnaps.begin(); it_snap != timeSnaps.end(); it_snap++) {
       std::cout << it_snap->as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(),n_label, forPajekToSVGAnim);
     } //snaps end
@@ -848,17 +891,52 @@ int get_unique_TL_ID (ID_kind id_kind){
 
 };
 
-/* Some macros for simple usage in LSD and elsewhere*/
+/* Some macros for simple usage in LSD and elsewhere
+   Obviously, Pajek can also be used directly. In this case, the macros
+   highlight the relvant APIs and how to use the Pajek library.
+*/
+
+/*
+  || Dynamic Network Mode - .paj format  ||
+     PAJ_MAKE_AVAILABLE creates at global (to the following commands) space a new, clean Pajek object.
+     PAJ_INIT / PAJ_INIT_ANIM initialise the file.
+     PAJ_ADD_V* Add vertices
+     PAJ_ADD_E* Add Edges
+     PAJ_ADD_A* Add Arcs
+     PAJ_SAVE Save all information to file.
+
+     The Class will be deconstructed automatically when it goes out of scope if
+     you use the macros. Otherwise, you need to take care (e.g. if new is used)
+
+     Notes: Time must always be increased. Vertices need to exist prior to
+      linking them. All Information needs to be provided for each time again.
+
+     For debugging use the switch:
+        #define PAJEK_CONSISTENCY_CHECK_ON
+     before including this file.
+
+  || Static Network Mode ||
+     use PAJ_STATIC to create the Pajek object and initialise it at the
+      current (local) scope instead of the PAJ_MAKE_AVAILABLE and PAJ_INIT
+
+     Static version of the other commands comannds:
+     PAJ_S_ADD_V* Add vertices
+     PAJ_S_ADD_E* Add Edges
+     PAJ_S_ADD_A* Add Arcs
+     PAJ_S_SAVE   Save to file
+
+     The file that is created also holds information of the time (*_t123.net)
+     When the current (local) scope is left, the Pajek object is destroyed.
+
+*/
+
+//dynamic macros
 #define PAJ_MAKE_AVAILABLE Pajek pajek_core_object;
 
 #define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      pajek_core_object.init(ParentFolderName,SetName,SetID,NetName);
 #define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	pajek_core_object.init(ParentFolderName,SetName,SetID,NetName,true);
 
-// #define PAJ_SET_SetID(SetID)  pajek_core_object.update_set_id(SetID);
-
 #define PAJ_SAVE    pajek_core_object.save_to_file();
-
-
 
 #define PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR);
 #define PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
@@ -873,3 +951,21 @@ int get_unique_TL_ID (ID_kind id_kind){
 #define PAJ_ADD_A(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Blue");
 #define PAJ_ADD_A_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Blue");
 
+// and the static options
+
+#define PAJ_STATIC(ParentFolderName,SetName,SetID,NetName)  Pajek pajek_core_object_static(ParentFolderName,SetName,SetID,NetName,false,true);
+
+#define PAJ_S_SAVE    pajek_core_object_static.save_to_file();
+
+#define PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  pajek_core_object_static.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR);
+#define PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
+#define PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
+
+#define PAJ_S_ADD_V(TIME,ID,KIND,VALUE)         PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,0.5,0.5,"ellipse",1.0,1.0,"Black");
+#define PAJ_S_ADD_V_XY(TIME,ID,KIND,VALUE,X,Y)  PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,"ellipse",1.0,1.0,"Black");
+
+#define PAJ_S_ADD_E(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Red");
+#define PAJ_S_ADD_E_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Red");
+
+#define PAJ_S_ADD_A(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Blue");
+#define PAJ_S_ADD_A_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Blue");
