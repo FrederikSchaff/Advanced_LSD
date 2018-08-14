@@ -41,7 +41,7 @@
     start bottom left. This is accomplished by reflecting the coordinates and
     then shifting them by one. If your coordinates follow the original SVG
     specificaton
-  #define Y0isLow
+  #define Y0isLow false
     before loading this library.
 
 */
