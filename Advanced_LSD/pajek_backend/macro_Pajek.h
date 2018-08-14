@@ -1,39 +1,91 @@
-//Macros for easy usage
-//This does not utilise all options yet.
+/* Some macros for simple usage in LSD and elsewhere
+   Obviously, Pajek can also be used directly. In this case, the macros
+   highlight the relvant APIs and how to use the Pajek library.
+*/
 
-  //Initialisation
-#define PAJEK_INIT pajek::pajek_init(seed-1,true,"Default_CFG","net") //Initialise Pajek, all prior information is lost, Standard is append mode and seed as name.
-#define PAJEK_INIT_S pajek::pajek_init(seed-1,false,"Default_CFG","net") //Initialise Pajek, all prior information is lost, Standard is append mode and seed as name.
-#define PAJEK_INIT_X(id,folder,suffix) pajek::pajek_init((int)id,true,folder,suffix) //provide some optional information
-#define PAJEK_INIT_XS(id,folder,suffix) pajek::pajek_init((int)id,false,folder,suffix) //single files mode, provide some optional information
+/*
+  || Dynamic Network Mode - .paj format  ||
+     PAJ_MAKE_AVAILABLE creates at global (to the following commands) space a new, clean Pajek object.
+     PAJ_INIT / PAJ_INIT_ANIM initialise the file.
+     PAJ_ADD_V* Add vertices
+     PAJ_ADD_E* Add Edges
+     PAJ_ADD_A* Add Arcs
+     PAJ_SAVE Save all information to file.
 
-#define PAJEK_INIT_NEW_RELATION(name,isedge) pajek::pajek_init_KindsOfRelation(name,isedge) //Add a new relation with name "name" and declare it as edge (isedge=true) or arc (isedge=false)
+     The Class will be deconstructed automatically when it goes out of scope if
+     you use the macros. Otherwise, you need to take care (e.g. if new is used)
 
-  //Adding Nodes
-#define PAJEK_VERTICE(ID,name,value) pajek::pajek_vertices_add( (int) ID, name,  /*int shape=*/0, /*char const *colour=*/"Black", /*double x_fact=*/1.0, /*double y_fact=*/1.0, value, /*double x_pos=*/-1.0, /*double y_pos=*/-1.0, /*int start=*/-1, /*int end=*/-1 )
-#define PAJEK_VERTICE_X(ID,name,value,shape,colour,x_size,y_size) pajek::pajek_vertices_add( (int) ID, name,  (int) shape, colour, x_size, y_size, value, /*double x_pos=*/-1.0, /*double y_pos=*/-1.0, /*int start=*/-1, /*int end=*/-1 )
-#define PAJEK_VERTICE_XP(ID,name,value,shape,colour,x_size,y_size,x_coor,y_coor) pajek::pajek_vertices_add( (int) ID, name,  (int) shape, colour, x_size, y_size, value, x_coor, y_coor, /*int start=*/-1, /*int end=*/-1 )
-#define PAJEK_VERTICE_XPT(ID,name,value,shape,colour,x_size,y_size,x_coor,y_coor,start,end) pajek::pajek_vertices_add( (int) ID, name,  (int) shape, colour, x_size, y_size, value, x_coor, y_coor, (int) start, (int) end )
+     Notes: Time must always be increased. Vertices need to exist prior to
+      linking them. All Information needs to be provided for each time again.
 
+     For debugging use the switch:
+    #define PAJEK_CONSISTENCY_CHECK_ON
+     before including this file.
 
-  //Special: Add all objects of given tpye as nodes
-#define PAJEK_VERTICE_SPECIALS(parent,obj_label,id_var_label,val_var_label,val_factor) \
-  object *cur_paj_par; \
-  CYCLES(parent,cur_paj_par,obj_label){ \
-    PAJEK_VERTICE(VS(cur_paj_par,id_var_label),obj_label,VS(cur_paj_par,val_var_label)*val_factor ); \
-  }
+  || Static Network Mode ||
+     use PAJ_STATIC to create the Pajek object and initialise it at the
+      current (local) scope instead of the PAJ_MAKE_AVAILABLE and PAJ_INIT
 
-#define PAJEK_VERTICE_SPECIAL(obj_label,id_var_label,val_var_label,val_factor) PAJEK_VERTICE_SPECIALS(p,obj_label,id_var_label,val_var_label,val_factor)
+     Static version of the other commands comannds:
+     PAJ_S_ADD_V* Add vertices
+     PAJ_S_ADD_E* Add Edges
+     PAJ_S_ADD_A* Add Arcs
+     PAJ_S_SAVE   Save to file
 
-  //Adding Links
-#define PAJEK_EDGE(source,target,name,value) pajek::pajek_arcs_add(true,(int)source,(int)target,value,name) //Add a simple edge
-#define PAJEK_ARC(source,target,name,value) pajek::pajek_arcs_add(false,(int)source,(int)target,value,name) //Add a simple arc
-#define PAJEK_ARC_X(source,target,name,value,width,colour) pajek::pajek_arcs_add(false,(int)source, (int) target,value,name,  (int) width, colour)   //More info (width and colour)
-#define PAJEK_EDGE_X(source,target,name,value,width,colour) pajek::pajek_arcs_add(true,(int)source, (int) target,value,name,  (int) width, colour)
-#define PAJEK_ARC_XT(source,target,name,value,width,colour,start,end) pajek::pajek_arcs_add(false,(int)source, (int) target,value,name,  (int) width, colour, (int) start, (int) end )
-#define PAJEK_EDGE_XT(source,target,name,value,width,colour,start,end) pajek::pajek_arcs_add(true,(int)source, (int) target,value,name,  (int) width, colour, (int) start, (int) end )
+     The file that is created also holds information of the time (*_t123.net)
+     When the current (local) scope is left, the Pajek object is destroyed.
 
-  //Saving / Writing data
-#define PAJEK_SNAPSHOT_ZERO pajek::pajek_snapshot(0,false) //make a single snapshot from the initial configuration
-#define PAJEK_SNAPSHOT pajek::pajek_snapshot(-1,t==max_step?true: (quit==0?false:true) ) //make a single snapshot, continous time. Also covers final snapshot.
+  || Additionl stuff ||
 
+    The SVG coordinate system starts top left. Instead, standard coordinates
+    start bottom left. This is accomplished by reflecting the coordinates and
+    then shifting them by one. If your coordinates follow the original SVG
+    specificaton
+  #define Y0isLow
+    before loading this library.
+
+*/
+
+//dynamic macros
+#define PAJ_MAKE_AVAILABLE Pajek pajek_core_object;
+
+#define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      pajek_core_object.init(ParentFolderName,SetName,SetID,NetName);
+#define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	pajek_core_object.init(ParentFolderName,SetName,SetID,NetName,true);
+
+#define PAJ_SAVE    pajek_core_object.save_to_file();
+
+#define PAJ_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL)   pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL);
+
+#define PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  PAJ_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,"")
+#define PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
+#define PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
+
+#define PAJ_ADD_V(TIME,ID,KIND,VALUE)         PAJ_ADD_V_C(TIME,ID,KIND,VALUE,0.5,0.5,"ellipse",1.0,1.0,"Black");
+#define PAJ_ADD_V_XY(TIME,ID,KIND,VALUE,X,Y)  PAJ_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,"ellipse",1.0,1.0,"Black");
+
+#define PAJ_ADD_E(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Red");
+#define PAJ_ADD_E_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Red");
+
+#define PAJ_ADD_A(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Blue");
+#define PAJ_ADD_A_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Blue");
+
+// and the static options
+
+#define PAJ_STATIC(ParentFolderName,SetName,SetID,NetName)  Pajek pajek_core_object_static(ParentFolderName,SetName,SetID,NetName,false,true);
+
+#define PAJ_S_SAVE    pajek_core_object_static.save_to_file();
+
+#define PAJ_S_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL)  pajek_core_object_static.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL);
+
+#define PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR)  PAJ_S_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,"")
+#define PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,true ,RELnAME,VALUE,WIDTH,COLOR);
+#define PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,COLOR)	pajek_core_object_static.add_relation(TIME,sID,sKIND,tID,tKIND,false,RELnAME,VALUE,WIDTH,COLOR);
+
+#define PAJ_S_ADD_V(TIME,ID,KIND,VALUE)         PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,0.5,0.5,"ellipse",1.0,1.0,"Black");
+#define PAJ_S_ADD_V_XY(TIME,ID,KIND,VALUE,X,Y)  PAJ_S_ADD_V_C(TIME,ID,KIND,VALUE,X,Y,"ellipse",1.0,1.0,"Black");
+
+#define PAJ_S_ADD_E(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Red");
+#define PAJ_S_ADD_E_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_S_ADD_E_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Red");
+
+#define PAJ_S_ADD_A(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME)	        PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,1.0,"Blue");
+#define PAJ_S_ADD_A_W(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH)	PAJ_S_ADD_A_C(TIME,sID,sKIND,tID,tKIND,VALUE,RELnAME,WIDTH,"Blue");

@@ -1,4 +1,14 @@
+# Notice 
+
+This is current work in progress and under heavy development. It can at most be considered an early alpha.
+If you are interested in this work and would perhaps like to contribute, do not hesitate to contact me (frederik.schaff@rub.de).
+
+## Recent changes
+
+- The pajek module is now fully functional (see the separate readme in "Advanced_LSD\pajek_backend").
+
 # Advanced_LSD
+
 This is both, a template and a set of utilities/modules for LSD (GIS, Population, Analysis, Pajek, ...)
 LSD is a c++-based agent-based modelling framework by Marco Valente, see: <https://github.com/marcov64/Lsd>
 
@@ -31,7 +41,7 @@ Any comments or questions are welcome. Please drop an E-Mail at Frederik.Schaff@
 Actually there is a lot of potential improvement and things that are currently going to be improved. Here, I will only list some of the things that can expected to be done in the next weeks.
 
 - [ ] Change all the backends to a MACRO structure, such that they become easier to use and the usage can be documented easier. Also, this way the usage is more in line with standard LSD usage.
-- [ ] Update the pajek backend to STL container usage and make it dynamic.
+- [x] Update the pajek backend to STL container usage and make it dynamic.
 
 ## Note on the License
 
