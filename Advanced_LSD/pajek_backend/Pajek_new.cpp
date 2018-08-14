@@ -308,6 +308,13 @@ struct Arc {
 //
 // };
 
+struct TimeOverview{
+  std::deque<Vertice>  Vertices_TO;
+  std::deque<Arc>      Arcs_TO;
+  std::map<ID_kind,Vertice*>       Vertices_TO_map;
+  std::map<unique_Relation,Arc*>   Arcs_TO_map;
+};
+
 struct TimeSnap{
 	int time;
 
@@ -477,6 +484,20 @@ class Pajek{
   //to normalise the sizes
   const double min_coord_offset = 0.000001; //Pajek needs the minimum to be > 0.
   double largest_x_y=min_coord_offset;
+  bool is_norm_coords = false;
+  bool is_norm_id_label_length = false;
+
+  std::deque<TimeSnap>     timeSnaps; //dynamic data
+
+      //static / overview data, front of paj file. To do: make a struct
+  TimeOverview timeOverview;
+
+
+#ifdef PAJEK_CONSISTENCY_CHECK_ON  //to check for consistency, optional
+	std::deque<std::pair<std::string,bool>> Relations;//for consistency checks
+                        //relation, isEdge
+#endif
+
 
   void update_max_x_y (const double coord){
     if (coord>largest_x_y){
@@ -492,11 +513,11 @@ class Pajek{
     }
   }
 
-  bool is_norm_coords = false;
+
   void norm_coords(){
     if (is_norm_coords == false){
       if (staticNetMode == false) {
-        for (auto &ver_TO : Vertices_TO) {
+        for (auto &ver_TO : timeOverview.Vertices_TO) {
           norm_coord(ver_TO.attributes.co_X);
           norm_coord(ver_TO.attributes.co_Y);
           #if Y0isLow
@@ -517,10 +538,10 @@ class Pajek{
     is_norm_coords = true;
   }
 
-  bool is_norm_id_label_length = false;
+
   void norm_id_label_length(){
-    auto it_ver = Vertices_TO.begin();
-    auto ver_end = Vertices_TO.end();
+    auto it_ver = timeOverview.Vertices_TO.begin();
+    auto ver_end = timeOverview.Vertices_TO.end();
     if (staticNetMode == true ) {
       it_ver = timeSnaps.at(0).Vertices.begin();
       ver_end = timeSnaps.at(0).Vertices.end();
@@ -538,7 +559,7 @@ class Pajek{
 
   int n_decimals_uniqueIDs() {
     if (staticNetMode == false ) {
-      return std::to_string(Vertices_TO.size()).length();
+      return std::to_string(timeOverview.Vertices_TO.size()).length();
     } else {
       return std::to_string(timeSnaps.at(0).Vertices.size()).length();
     }
@@ -549,21 +570,7 @@ class Pajek{
   }
 
 
-	std::deque<TimeSnap>     timeSnaps; //dynamic data
 
-//   TimeOverview  timeOverview;      //time line overview
-  std::deque<Vertice>  Vertices_TO;
-  std::deque<Arc>      Arcs_TO;
-  std::map<ID_kind,Vertice*>       Vertices_TO_map;
-  std::map<unique_Relation,Arc*>   Arcs_TO_map;
-
-  std::set<std::string>  Kinds; //for the partition table
-
-
-#ifdef PAJEK_CONSISTENCY_CHECK_ON  //to check for consistency, optional
-	std::deque<std::pair<std::string,bool>> Relations;//for consistency checks
-                        //relation, isEdge
-#endif
 
 
 public:
@@ -575,11 +582,38 @@ public:
       initialised = true;
     }
 
+    void clear() //clear everything for a new initialisation
+    {
+
+    parent_folder   = "Networks"; //information of the parentfolder, relative to the program dir
+    set_name        = "MyNet";
+    set_id          = 0; //the id is integer number - e.g. the seed.
+    initialised     = false;
+
+    network_name="";
+    forPajekToSVGAnim = false;   //width integerised, no partition tables, Edges as Arcs (one way, marked)
+    staticNetMode     = false; //a switch. One may also use pajek to create a single file (.net)
+
+  	cur_time=-1;
+    largest_ID=0; //largest ID in all ID_kinds - to specify #decimals
+    n_label=32; //size of the labels - will be updated later
+
+    largest_x_y=min_coord_offset;
+    is_norm_coords = false;
+    is_norm_id_label_length = false;
+
+      timeSnaps.clear();
+      timeOverview = TimeOverview();
+
+      #ifdef PAJEK_CONSISTENCY_CHECK_ON  //to check for consistency, optional
+        Relations.clear();
+      #endif
+    }
+
     void init(std::string _parent_folder, std::string _set_name, int _set_id, std::string _network_name, bool _forPajekToSVGAnim=false, bool _staticNetMode=false)
     {
       if ( initialised == true ){
-        std::cout << "Error! Could not Init Pajek object. It is already initialised." << std::endl;
-        return;
+        clear();
       }
       parent_folder = _parent_folder;
       set_name=_set_name;
@@ -592,39 +626,43 @@ public:
     }
 
   void update_set_id(int id) { set_id = id;}
-  std::string partition_as_string(){
-    for (const auto &ver : Vertices_TO){
+
+  std::string partition_as_string() const
+  {
+    std::set<std::string>  Kinds; //for the partition table
+    for (const auto &ver : timeOverview.Vertices_TO){
       Kinds.emplace(ver.id_kind.kind);
     }
 
     std::string output="";
-    size_t to_reserve = Vertices_TO.size()*3 + Kinds.size()*50 + 50;
+    size_t to_reserve = timeOverview.Vertices_TO.size()*3 + Kinds.size()*50 + 50;
     output.reserve(to_reserve); //a rough estimate
 
 
     for (const auto &part_kind : Kinds){
       output += "*Partition \"" + part_kind + "\"\n";
-      output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
-      for (const auto &ver : Vertices_TO){
+      output += "*Vertices " + std::to_string(timeOverview.Vertices_TO.size()) + "\n";
+      for (const auto &ver : timeOverview.Vertices_TO){
         output += std::to_string(ver.id_kind.kind == part_kind?1:0) + "\n";
       }
       output+= "\n";
     }
 //     output.shrink_to_fit();
-//     std::cout << "String size with "<< Vertices_TO.size() << " vertices and " << Kinds.size() << " kinds is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
+//     std::cout << "String size with "<< timeOverview.Vertices_TO.size() << " vertices and " << Kinds.size() << " kinds is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
 
     return output;
   }
 
     //each time a vertice is added to a time snap, we also update the time line info
-  void update_vertice_TL(int time,const ID_kind &id_kind, const vertice_Attributes &attributes){
+  void update_vertice_TL(int time,const ID_kind &id_kind, const vertice_Attributes &attributes)
+  {
     //check if the vertice exists
-    auto map_find =  Vertices_TO_map.find(id_kind);
+    auto map_find =  timeOverview.Vertices_TO_map.find(id_kind);
 
       //if it does not yet exist, create it and add it to the map
-    if (map_find == Vertices_TO_map.end()){
-      Vertices_TO.emplace_back(Vertices_TO.size()+1,id_kind,attributes);
-      Vertices_TO_map.emplace(id_kind,&Vertices_TO.back());
+    if (map_find == timeOverview.Vertices_TO_map.end()){
+      timeOverview.Vertices_TO.emplace_back(timeOverview.Vertices_TO.size()+1,id_kind,attributes);
+      timeOverview.Vertices_TO_map.emplace(id_kind,&timeOverview.Vertices_TO.back());
 //       largest_ID = std::max(id_kind.ID,largest_ID); //update largest ID
 //       if (id_kind.label>""){
 //         n_label = std::max(n_label, int(id_kind.label.length()));
@@ -634,35 +672,36 @@ public:
 //take out and make a function, like the norm_coords, of it. Necessary for the static version.
     }
 
-    Vertices_TO_map.at(id_kind)->append(time);
+    timeOverview.Vertices_TO_map.at(id_kind)->append(time);
   }
 
     //each time an arc is added to a time snap, we also update the time line info
-  void update_arcs_TL(int time, const unique_Relation &unique_relation, const arc_Attributes &attributes){
+  void update_arcs_TL(int time, const unique_Relation &unique_relation, const arc_Attributes &attributes)
+  {
     //check if the vertice exists
-    auto it_map_pos = Arcs_TO_map.find(unique_relation);
+    auto it_map_pos = timeOverview.Arcs_TO_map.find(unique_relation);
 
-    if (it_map_pos == Arcs_TO_map.end()){
+    if (it_map_pos == timeOverview.Arcs_TO_map.end()){
       //if it does not yet exist, create it and add it to the map
-//       std::cout << "the item does not yet exist in Arcs_TO_map" << std::endl;
+//       std::cout << "the item does not yet exist in timeOverview.Arcs_TO_map" << std::endl;
       SourceTargetUnique sourceTargetUnique(get_unique_TL_ID(unique_relation.source),get_unique_TL_ID(unique_relation.target) );
 
       if (sourceTargetUnique.unique_ID_source < 0 || sourceTargetUnique.unique_ID_target < 0){
-//         std::cout << "error: The unique relation cannot be added to Arcs_TO because the Vertice objects of source and/or target are missing!" << std::endl;
+//         std::cout << "error: The unique relation cannot be added to timeOverview.Arcs_TO because the Vertice objects of source and/or target are missing!" << std::endl;
         return;
       }
 
-      Arcs_TO.emplace_back(unique_relation, sourceTargetUnique, attributes);
-//       std::cout << "Added the new element to Arcs_TO. Check: source is " << Arcs_TO.back().unique_relation.source.ID << "/" << Arcs_TO.back().unique_relation.source.kind << " target is "  << Arcs_TO.back().unique_relation.target.ID << "/" << Arcs_TO.back().unique_relation.target.kind << "and relation is " << Arcs_TO.back().unique_relation.relation << " of kind " << (Arcs_TO.back().unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
+      timeOverview.Arcs_TO.emplace_back(unique_relation, sourceTargetUnique, attributes);
+//       std::cout << "Added the new element to timeOverview.Arcs_TO. Check: source is " << timeOverview.Arcs_TO.back().unique_relation.source.ID << "/" << timeOverview.Arcs_TO.back().unique_relation.source.kind << " target is "  << timeOverview.Arcs_TO.back().unique_relation.target.ID << "/" << timeOverview.Arcs_TO.back().unique_relation.target.kind << "and relation is " << timeOverview.Arcs_TO.back().unique_relation.relation << " of kind " << (timeOverview.Arcs_TO.back().unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
 
-      auto test = Arcs_TO_map.emplace(unique_relation,&Arcs_TO.back());
+      auto test = timeOverview.Arcs_TO_map.emplace(unique_relation,&timeOverview.Arcs_TO.back());
       it_map_pos = test.first;
-//       std::cout << "Added the new element to Arcs_TO_map. Check: " << (test.second?" Added! ":" already there! ") <<  std::endl;
+//       std::cout << "Added the new element to timeOverview.Arcs_TO_map. Check: " << (test.second?" Added! ":" already there! ") <<  std::endl;
 //       std::cout << ".... Check: source is " << it_map_pos->second->unique_relation.source.ID << "/" << it_map_pos->second->unique_relation.source.kind << " target is "  << it_map_pos->second->unique_relation.target.ID << "/" << it_map_pos->second->unique_relation.target.kind << "and relation is " << it_map_pos->second->unique_relation.relation << " of kind " << (it_map_pos->second->unique_relation.isEdge? " Edge ": " Arc ") << std::endl;
     }
 
     //why does it not work?
-    //Arcs_TO_map.at(unique_relation)->append(time); //for whatever reason, this does NOT work yet!
+    //timeOverview.Arcs_TO_map.at(unique_relation)->append(time); //for whatever reason, this does NOT work yet!
     it_map_pos->second->append(time); //this does... cost me half a day
 
 //     std::cout<< "Is the key stored at the it pos the same as the initial key?: " << (it_map_pos->first == unique_relation ? "Yes" : "No") << std::endl;
@@ -777,29 +816,30 @@ void add_relation(int time, int source_ID, std::string source_kind,
     }
 	}
 
-  //return the unique time line id of the vertice, if it exists. else return -1
-int get_unique_TL_ID (ID_kind id_kind){
-  auto map_find =  Vertices_TO_map.find(id_kind);
+    //return the unique time line id of the vertice, if it exists. else return -1
+  int get_unique_TL_ID (ID_kind id_kind)
+  {
+    auto map_find =  timeOverview.Vertices_TO_map.find(id_kind);
 
-    //if it does not yet exist, create it and add it to the map
-  if (map_find == Vertices_TO_map.end()){
-    return -1; //does not exist
-  } else {
-    return map_find->second->unique_ID;
+      //if it does not yet exist, create it and add it to the map
+    if (map_find == timeOverview.Vertices_TO_map.end()){
+      return -1; //does not exist
+    } else {
+      return map_find->second->unique_ID;
+    }
   }
-}
 
 
-  std::string overview_as_string(std::string network_name, int n_decimals_unique, int n_decimals, int n_label, bool forPajekToSVGAnim)
+  std::string overview_as_string(std::string network_name, int n_decimals_unique, int n_decimals, int n_label, bool forPajekToSVGAnim) const
   {
     std::string output;
-    size_t to_reserve = Vertices_TO.size()*120 + Arcs_TO.size()*60 + 50;
+    size_t to_reserve = timeOverview.Vertices_TO.size()*120 + timeOverview.Arcs_TO.size()*60 + 50;
     output.reserve(to_reserve); //a rough estimate
     output = "*Network " + network_name + "\n";
-		output += "*Vertices " + std::to_string(Vertices_TO.size()) + "\n";
+		output += "*Vertices " + std::to_string(timeOverview.Vertices_TO.size()) + "\n";
     std::pair<std::string,std::string> vert_string;
     std::string vert_string_second_former="";
-    for (const auto &ver_TL: Vertices_TO){           //do not use the map, we need the unique_ID order!
+    for (const auto &ver_TL: timeOverview.Vertices_TO){           //do not use the map, we need the unique_ID order!
       vert_string = ver_TL.as_string(n_decimals_unique,n_decimals,n_label);
       output += vert_string.first;
       if (vert_string.second != vert_string_second_former ){
@@ -816,7 +856,7 @@ int get_unique_TL_ID (ID_kind id_kind){
     bool curent_isEdge = false;
     int count_rel = 0; //ID of the relation
 
-    for (const auto &it_Arcs_TL : Arcs_TO_map ){
+    for (const auto &it_Arcs_TL : timeOverview.Arcs_TO_map ){
       if (it_Arcs_TL.first.relation != relation_name ) {
         if (it_Arcs_TL.first.isEdge != curent_isEdge) {
           curent_isEdge = !curent_isEdge;
@@ -831,12 +871,13 @@ int get_unique_TL_ID (ID_kind id_kind){
     }
     output+= "\n";
 //     output.shrink_to_fit();
-//     std::cout << "String size with "<< Vertices_TO.size() << " vertices and " << Arcs_TO.size() << " relations is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
+//     std::cout << "String size with "<< timeOverview.Vertices_TO.size() << " vertices and " << timeOverview.Arcs_TO.size() << " relations is: " << output.capacity() << "vs estimate: " << to_reserve << std::endl;
 
     return output;
   }
 
-  void save_to_file(){
+  void save_to_file()
+  {
 
       //create and open file
     if (makePath(parent_folder.c_str()) == false){
@@ -883,7 +924,8 @@ int get_unique_TL_ID (ID_kind id_kind){
     }
   }
 
-  void printall(){
+  void printall()
+  {
     if (staticNetMode == false) {
       std::cout << overview_as_string(network_name,n_decimals_uniqueIDs(),n_decimals_IDs(), n_label, forPajekToSVGAnim);
     }
