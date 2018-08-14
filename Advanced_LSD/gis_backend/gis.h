@@ -60,27 +60,73 @@ It also includes the other core-code files (all not fun_*)
 
 struct ext_gis_coords; //a special type holding x and y coords and distance information
 struct coords;
+struct int_coords;
 class ext_gis_patch;  //GIS information for each patch that cannot reside in LSD
 class ext_gis; //the main gis object
 class ext_gis_rsearch; //a "radius" search object
 
 
 //helper
-double geo_distance(double x_1, double y_1, double x_2, double y_2);
-double geo_distance(ext_gis_coords a, ext_gis_coords b);
-double geo_distance(coords a, coords b);
+double geo_distance(double x_1, double y_1, double x_2, double y_2, int wrap=0, double xn=0, double yn=0);
+double geo_distance(ext_gis_coords a, ext_gis_coords b, int wrap=0, double xn=0, double yn=0);
+double geo_distance(coords a, coords b, int wrap=0, double xn=0, double yn=0);
 
 //sqrt(x)<sqrt(y) if x<y
-double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2);
-double geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2);
-double geo_pseudo_distance(ext_gis_coords a, ext_gis_coords b);
-double geo_pseudo_distance(coords a, coords b);
+double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2, int wrap=0, double xn=0, double yn=0);
+int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int wrap=0, int yn=0, int xn=0);
+double geo_pseudo_distance(coords a, coords b, int wrap=0, double xn=0, double yn=0);
 
+struct Wrap{
+    bool left;
+    bool right;
+    bool top;
+    bool bottom;
+   /*wrapping: there are 2^4 options. We use a bit-code (0=off):
+    0-bit: left     : 0=0 1=1
+    1-bit: right    : 0=0 1=2
+    2-bit: top      : 0=0 1=4
+    3-bit: bottom   : 0=0 1=8
+    */
+    Wrap(int wrap){
+      if (wrap>7){bottom=true; wrap-=8;} else {bottom=false; }
+      if (wrap>3){top=true;    wrap-=4;} else {top=false;    }
+      if (wrap>1){right=true;  wrap-=2;} else {right=false;  }
+      if (wrap>0){left=true;           } else {left=false;   }
+    }
+    Wrap(bool left, bool right, bool top, bool bottom) : left(left),right(right),top(top),bottom(bottom) {}
+};
+
+int transcode_Wrap(bool left, bool right, bool top, bool bottom){
+  int wrap = 0;
+  if (left)
+    wrap+=1;
+  if (right)
+    wrap+=2;
+  if (top)
+    wrap+=4;
+  if (bottom)
+    wrap+=8;
+
+  return wrap;
+}
 
 struct coords {
   double x;
   double y;
   coords(double x, double y) : x(x), y(y) {};
+  friend bool operator <(const coords& a, const coords& b) {
+    return std::tie(a.x, a.y) < std::tie(a.x, a.y);
+  }
+};
+
+struct int_coords {
+  int x;
+  int y;
+  int check_comp = 0;
+  int_coords(int x, int y) : x(x), y(y) {};
+  friend bool operator <(const int_coords& a, const int_coords& b) {
+    return std::tie(a.x, a.y) < std::tie(a.x, a.y);
+  }
 };
 
 //ext_gis_coords is a struct that holds x and y coords and optionally a distance
@@ -95,8 +141,13 @@ struct ext_gis_coords{
     return real_distance;
   };
   ext_gis_coords(int x, int y, double pseudo_distance) : x(x), y(y), pseudo_distance(pseudo_distance) {}; //constructor
-  ext_gis_coords(int x, int y) : x(x), y(y), pseudo_distance(0) {}; //constructor
-  ext_gis_coords() : x(-1),y(-1),pseudo_distance(0) {};//default constructor
+//   ext_gis_coords(int x, int y) : x(x), y(y), pseudo_distance(0) {}; //constructor
+//   ext_gis_coords() : x(-1),y(-1),pseudo_distance(0) {};//default constructor
+
+  bool operator<(const ext_gis_coords &b) const
+  {
+    return pseudo_distance < b.pseudo_distance;
+  }
 };
 
 
@@ -143,6 +194,7 @@ class ext_gis {
     char patch_label[ MAX_ELEM_LENGTH ]; //the label of the LSD object, e.g. "Patch" or "Patch_Type_A"
 
     bool wrap_left,wrap_right,wrap_top,wrap_bottom; //do we have world wrapping?
+    int code_Wrap;
     int xn,yn; //size of lattice
     std::vector<std::vector<ext_gis_patch>>  patches;
 
@@ -151,11 +203,12 @@ class ext_gis {
     object* LSD_by_coords(int x, int y); //returns the corresponding LSD patch, if it exists
     object* LSD_by_coords(ext_gis_coords); //returns the corresponding LSD patch, if it exists
     object* LSD_by_coords(coords); //returns the corresponding LSD patch, if it exists
+    object* LSD_by_coords(int_coords); //returns the corresponding LSD patch, if it exists
 
-    ext_gis(object* counterpart, char const *_patch_label, int xn, int yn, int wrap);
+    ext_gis(object* counterpart, char const *_patch_label, int xn, int yn, int code_Wrap);
     ext_gis_patch* newPatch(object* LSD_Patch);
 
-    ext_gis_coords random_position(); //produce a random position on the lattice
+    coords random_position(); //produce a random position on the lattice
     int random_x(); //produce a random position on the lattice
     int random_y(); //produce a random position on the lattice
 
@@ -195,7 +248,7 @@ class ext_gis_rsearch {
 
     //own
 
-    ext_gis_coords origin; //where the search starts
+    coords origin; //where the search starts
     object* last; //the current object selected
     double last_distance; //distance from last object to origin of search
 
@@ -204,16 +257,19 @@ class ext_gis_rsearch {
     double radius;        //default: complete
     double pseudo_radius;
 
-    std::vector <ext_gis_coords> valid_objects; //distance , coords
+    std::vector<ext_gis_coords> valid_objects; //distance , coords
     std::vector<ext_gis_coords>::iterator it_valid; //simple forward iterator
     //std::vector <std::vector <bool> > search_space; //xy search space
 
-    ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
-    ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius=-1, int _type=0);
-    ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
-    ext_gis_rsearch(){
-      PLOG("\next_gis_rsearch() empty default initialisation called.");
-    }; //default, does not initialise stuff.
+    ext_gis_rsearch(ext_gis* _target, coords _origin, double _radius=-1, int _type=0) : target(_target), origin(_origin), radius(_radius), type(_type)
+    {
+      pseudo_radius = radius*radius;
+      init();
+    } //each time a new search is started we create a new object.
+//    ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
+//     ext_gis_rsearch(){
+//       PLOG("\next_gis_rsearch() empty default initialisation called.");
+//     }; //default, does not initialise stuff.
 
     object* next();  //provide next LSD patch object in search radius,
                     //or NULL if done.
@@ -225,10 +281,36 @@ class ext_gis_rsearch {
   private:
     //See: https://stackoverflow.com/a/7330341/3895476
     // You may not "delegate" constructors. Cost me a full day or so...
-    void init(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type); //each time a new search is started we create a new object.
-    void init(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type); //each time a new search is started we create a new object.
+    void init(){
+      VERBOSE_MODE(false){
+        PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising");
+        PLOG("\n target LSD Object holding lattice is: %s", target->LSD_counterpart->label);
+        PLOG("\n Search is centered at: %i, %i and radius is: %g.",origin.x,origin.y,radius);
+        PLOG("\n Type of search is %i",type);
+      }
 
-    void init_ssimple(bool sorted=false); //initialise the rsearch upon creation
+      if (radius < 0){
+        radius = max(target->xn,target->yn)*2; //complete
+        pseudo_radius = radius*radius; //we work with pseudo distance to not sqrt()
+      }
+
+      valid_objects.clear(); //clear list
+      switch (type) {
+        case 0: init_ssimple(); break;
+        case 1: init_ssimple(true); break;//sorted
+        default: init_ssimple(); break; //if wrong argument is supplied. add check later
+      }
+      VERBOSE_MODE(false){
+        PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising done. Check.");
+        PLOG("\n There are %i options.",valid_objects.size());
+      }
+      it_valid  = valid_objects.begin(); //initialise the iterator used in next()
+      VERBOSE_MODE(false && valid_objects.size()>0){
+        PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance());
+      }
+    }
+
+    void init_ssimple(bool to_sort=false); //initialise the rsearch upon creation
                  //packed in an extra function to make improvements more easy.
 
 

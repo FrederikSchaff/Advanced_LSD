@@ -53,9 +53,8 @@
 
 //  PLOG("\n There are %i valid objects to scan.",temp_gis_search_obj.valid_objects.size()); \
 
-ext_gis_rsearch temp_gis_search_obj;
 #define GIS_CYCLE_NEIGHBOURSS(gis_obj,Xobj,x,y,radius,type) \
-  temp_gis_search_obj = ext_gis_rsearch(P_EXTS(gis_obj,ext_gis),x,y,radius,type); \
+  ext_gis_rsearch temp_gis_search_obj(P_EXTS(gis_obj,ext_gis),x,y,radius,type); \
   for (Xobj=temp_gis_search_obj.next();temp_gis_search_obj.it_valid != temp_gis_search_obj.valid_objects.end();Xobj=temp_gis_search_obj.next())
 
 #define GIS_CYCLE_NEIGHBOURS_SIMPLES(gis_obj,Xobj,x,y,radius) \
@@ -76,9 +75,10 @@ ext_gis_rsearch temp_gis_search_obj;
   //in given neighbourhood.
 
 #define GEO_DISTANCE(x1,y1,x2,y2) geo_distance((double)x1, (double)y1, (double)x2, (double) y2)
-#define GEO_PSEUDODISTANCE(x1,y1,x2,y2) geo_pseudo_distance((double)x1, (double)y1, (double)x2, (double) y2)
+#define GEO_PSEUDODISTANCE(x1,y1,x2,y2) geo_pseudo_distance(x1, y1, x2, y2)
 
 #define GIS_COORDS(lsd_obj) coords(GET_VAR(lsd_obj,"_x"),GET_VAR(lsd_obj,"_y") )
+#define GIS_COORDS_INT(lsd_obj) int_coords(int(GET_VAR(lsd_obj,"_x")),int(GET_VAR(lsd_obj,"_y")) )
 
 #define GEO_DISTANCE_OBJ(obj1,obj2)       geo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
 #define GEO_PSEUDODISTANCE_OBJ(obj1,obj2) geo_pseudo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))

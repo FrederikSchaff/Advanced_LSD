@@ -40,7 +40,7 @@
     LSD_counterpart=counterpart;
     xn=_xn;
     yn=_yn;
-
+    code_Wrap=wrap;
     /*wrapping: there are 2^4 options. We use a bit-code (0=off):
     0-bit: left     : 0=0 1=1
     1-bit: right    : 0=0 1=2
@@ -179,64 +179,9 @@ object* ext_gis::move_LSD(int x, int y, const std::string& direction, bool compl
     Radius Search
 */
 
-void ext_gis_rsearch::init(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
-  VERBOSE_MODE(false){
-    PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising");
-    PLOG("\n target LSD Object holding lattice is: %s", _target->LSD_counterpart->label);
-    PLOG("\n Search is centered at: %i, %i and radius is: %g.",_origin.x,_origin.y,_radius);
-    PLOG("\n Type of search is %i",_type);
-  }
-
-  target = _target;
-  origin = _origin;
-  if (_radius > 0){
-    radius = _radius;
-  } else {
-    radius = max(target->xn,target->yn)*2; //complete
-  }
-  pseudo_radius = _radius*_radius; //we work with pseudo distance to not sqrt()
-  type = _type;
-//   last = NULL;
-//   last_distance = -1;
-
-  valid_objects.clear(); //clear list
-  switch (type) {
-
-    case 0: init_ssimple(); break;
-    case 1: init_ssimple(true); break;//sorted
-    default: init_ssimple(); break; //if wrong argument is supplied. add check later
-
-  }
-  VERBOSE_MODE(false){
-    PLOG("\nGeography Model :   ext_gis_rsearch::ext_gis_rsearch(): Initialising done. Check.");
-    PLOG("\n There are %i options.",valid_objects.size());
-  }
-  it_valid  = valid_objects.begin(); //initialise the iterator used in next()
-  VERBOSE_MODE(false && valid_objects.size()>0){
-    PLOG("\n First option is located at (%i, %i) with distance to origin: %g",it_valid->x,it_valid->y,it_valid->distance());
-  }
-}
-
-void ext_gis_rsearch::init(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type){
-  ext_gis_coords _origin(_origin_x,_origin_y);
-  init(_target, _origin, _radius, _type);
-}
-
-ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius, int _type){
-  init(_target, _origin_x, _origin_y, _radius, _type);
-}
-
-ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, ext_gis_coords _origin, double _radius, int _type){
-  init(_target,_origin,_radius,_type);
-}
-ext_gis_rsearch::ext_gis_rsearch(ext_gis* _target, coords _origin_c, double _radius, int _type){
-  ext_gis_coords _origin(_origin_c.x,_origin_c.y);
-  init(_target,_origin,_radius,_type);
-}
 
 
-
-void ext_gis_rsearch::init_ssimple(bool sorted){
+void ext_gis_rsearch::init_ssimple(bool to_sort){
   //we make it rather simple. we specify the extreme boarders, defined by the
   //centered rectangle with radius (around the center) and als
   //checking for wraping.
@@ -252,9 +197,12 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
   // also check that in case of wrapping each point is tested once.
   // and that we do not end up in non-valid places when no wrapping.
 
-  //added option to search complete
+  //13-august-18
+  // added wrapping considered in distance calculations for list. - this was buggy
 
-  VERBOSE_MODE(false){
+  //added option to search complete
+  const bool verbose_mode=false;
+  VERBOSE_MODE(verbose_mode){
     PLOG("\nGeography Model :   ext_gis_rsearch::init_ssimple(): Defining Set.");
   }
 
@@ -265,16 +213,24 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
 
   int yn = target->yn - 1;
   int y0 = 0;
-  int y = origin.x;
+  int y = origin.y;
+
+
+  bool wrap_left = target->wrap_left;
+  bool wrap_right = target->wrap_right;
+  bool wrap_top = target->wrap_top;
+  bool wrap_bottom = target->wrap_bottom;
+  int code_Wrap = transcode_Wrap(wrap_left,wrap_right,wrap_top,wrap_bottom);
 
     //check if everything is covered first
   //this is a simplified check mainly intended to find per se a compl. search
   //initialised with radius = -1
+  int adj_radius = (int) ceil(radius);
   if (radius >= max(target->xn,target->yn)*2) {
 //     PLOG("\nCHECK: Creating complete search object");  //checked
-    for (int tx=0; tx <= xn; tx++) {
-      for (int ty=0; ty <= yn; ty++) {
-        valid_objects.emplace_back(ext_gis_coords(tx,ty,geo_pseudo_distance(tx,ty,x,y) )); //add to valid objects
+    for (int tx=x0; tx <= xn; tx++) {
+      for (int ty=y0; ty <= yn; ty++) {
+        valid_objects.emplace_back(tx,ty,geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn)); //add to valid objects
       }
     }
 
@@ -282,105 +238,210 @@ void ext_gis_rsearch::init_ssimple(bool sorted){
     //add valid objects from this superset
     //also, takes care of wrapping conditions
   } else {
-    bool wrap_left = target->wrap_left;
-    bool wrap_right = target->wrap_right;
-    bool wrap_top = target->wrap_top;
-    bool wrap_bottom = target->wrap_bottom;
 
-    int adj_radius = (int) ceil(radius);
-
-    //Out
-
-    //default is complete x/y
-    int x_l = x0;
-    int x_r = xn;
-    if (adj_radius < xn*2){   //check if everything is covered by default.
-
-      x_l = x - adj_radius;
-      if (!wrap_left && x_l < x0){ //if no wrapping allowed
-        x_l = x0;
-      }
-
-      x_r = x + adj_radius;
-      if (!wrap_right && x_r > xn){ //if no wrapping allowed
-        x_r = xn;
-      }
-
-      //only relevant for wrapping, check that nothing is covered more than once
-      if (x_l < x0 && (xn - (-x_l) ) <= x_r ){
-        x_l = - (xn - x_r - 1); //end one right of x_r
-      }
-
-      //only relevant for wrapping, check that nothing is covered more than once
-      if (x_r > xn && (x_r - xn)  >= x_l){
-        x_r = xn + x_l - 1; //end one left of x_l
-      }
-
+    //x_l is left without wrapping, x_l_w>x0 is with potential wrapping
+    int x_l = x - adj_radius;
+    int x_l_w = x0; //off default - this value is impossible
+    if (x_l<x0) {
+      x_l_w = xn - (x_l + x0)-1;
+      x_l = x0;
+    }
+    int x_r = x + adj_radius;
+    int x_r_w = xn; //off default
+    if (x_r>xn) {
+      x_r_w = x0 + (x_r - xn)-1;
+      x_r = xn;
     }
 
-    int y_d = y0;
-    int y_u = yn;
-    if (adj_radius < yn*2){
-      int y_d = y - adj_radius;
-      if (!wrap_bottom && y_d < y0){
-        y_d = y0;
-      }
-
-      int y_u = y + adj_radius;
-      if (!wrap_top && y_u > yn){
-        y_u = yn;
-      }
-
-      //only relevant for wrapping, check that nothing is covered more than once
-      if (y_d < y0 && ( yn - (- y_d) ) <= y_u ){
-        y_d = - (yn - y_u - 1); //end one above of x_u
-      }
-
-      //only relevant for wrapping, check that nothing is covered more than once
-      if ( y_u > yn && (y_u - yn) >= y_d){
-        y_u = yn + y_d - 1; //end one below of y_d
-      }
-
+    int y_b = y - adj_radius;
+    int y_b_w = y0; //off default
+    if (y_b<y0) {
+      y_b_w = yn - (y_b + y0)-1;
+      x_l = x0;
+    }
+    int y_t = y + adj_radius;
+    int y_t_w = yn; //off default
+    if (y_t>yn) {
+      y_t_w = x0 + (y_t - yn)-1;
+      y_t = yn;
     }
 
-    //next, create a list of the potential candidates
-    //05.07.2018 15:03:30 But change negative coords (wrapping checked before)
-    ext_gis_coords temp;
-    int total = 0;
-    int tx,ty;
-    for (temp.x=x_l; temp.x<=x_r; temp.x++){ //by column
-      for (temp.y=y_d; temp.y<=y_u; temp.y++){ //elements in column
-        total++; //checked
-        temp.pseudo_distance = geo_pseudo_distance(origin,temp);
-        tx=temp.x;
-        ty=temp.y;
-        if (temp.pseudo_distance<=pseudo_radius){
-          if (tx<x0){
-            tx = xn + tx; //temp.x < 0!
-          } else if (tx>xn-1){
-            tx -= xn;
+    //tried with set and failed...
+
+
+    //Add inner points
+    int checker = 0;
+    for (int tx=x_l;tx<=x_r;tx++){
+      for (int ty=y_b;ty<=y_t;ty++){
+//         valid_objects.emplace_back(ext_gis_coords(tx,ty,geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn) )); //add to valid objects
+        if (std::find_if(valid_objects.begin(),valid_objects.end(),[&tx,&ty](auto const &t1){
+            return std::tie(t1.x,t1.y)==std::tie(tx,ty); //sort ascending in distance
+          })==valid_objects.end()){
+          int pd = geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn);
+          if (pd <= adj_radius) {
+            valid_objects.emplace_back(tx,ty,double(pd)); //add to valid objects
           }
-          if (ty<y0){
-            ty = yn + ty;
-          } else if (ty>yn-1){
-            ty -= yn;
-          }
-          valid_objects.push_back(ext_gis_coords(tx,ty,temp.pseudo_distance) ); //add to valid objects
-  //         PLOG("\n ADDING an item.");
-        } else {
-  //         PLOG("\n NOT Adding an item");
         }
       }
     }
-    VERBOSE_MODE(false){
-      PLOG("\n there are in %i options valid from %i checked.",valid_objects.size(),total);
+
+    //if wrapping to left, add points
+    if (wrap_left == true && x_l_w != x0){
+      for (int tx=x_l_w;tx<=xn;tx++){
+        for (int ty=y_b;ty<=y_t;ty++){
+          if (std::find_if(valid_objects.begin(),valid_objects.end(),[&](auto const &t1){
+              return std::tie(t1.x,t1.y)==std::tie(tx,ty); //sort ascending in distance
+            })==valid_objects.end()){
+            int pd = geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn);
+            if (pd <= adj_radius) {
+              valid_objects.emplace_back(tx,ty,double(pd)); //add to valid objects
+            }
+          }
+        }
+      }
     }
+
+    //if wrapping to right, add points
+    if (wrap_right == true && x_r_w != xn){
+      for (int tx=x0;tx<=x_r_w;tx++){
+        for (int ty=y_b;ty<=y_t;ty++){
+          if (std::find_if(valid_objects.begin(),valid_objects.end(),[&](auto const &t1){
+              return std::tie(t1.x,t1.y)==std::tie(tx,ty); //sort ascending in distance
+            })==valid_objects.end()){
+            int pd = geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn);
+            if (pd <= adj_radius) {
+              valid_objects.emplace_back(tx,ty,double(pd)); //add to valid objects
+            }
+          }
+        }
+      }
+    }
+
+    if (wrap_top == true && y_t_w != y0) {
+      for (int tx=x_l;tx<=x_r;tx++){
+        for (int ty=y0;ty<=y_t_w;ty++){
+          if (std::find_if(valid_objects.begin(),valid_objects.end(),[&](auto const &t1){
+              return std::tie(t1.x,t1.y)==std::tie(tx,ty); //sort ascending in distance
+            })==valid_objects.end()){
+            int pd = geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn);
+            if (pd <= adj_radius) {
+              valid_objects.emplace_back(tx,ty,double(pd)); //add to valid objects
+            }
+          }
+        }
+      }
+    }
+
+    if (wrap_bottom == true && y_b_w != yn) {
+      for (int tx=x_l;tx<=x_r;tx++){
+        for (int ty=y_b_w;ty<=yn;ty++){
+          if (std::find_if(valid_objects.begin(),valid_objects.end(),[&](auto const &t1){
+              return std::tie(t1.x,t1.y)==std::tie(tx,ty); //sort ascending in distance
+            })==valid_objects.end()){
+            int pd = geo_pseudo_distance(tx,ty,x,y,code_Wrap,xn,yn);
+            if (pd <= adj_radius) {
+              valid_objects.emplace_back(tx,ty,double(pd)); //add to valid objects
+            }
+          }
+        }
+      }
+    }
+
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//     //Out
+//
+//     //default is complete x/y
+//     int x_l = x0;
+//     int x_r = xn;
+//     if (adj_radius < xn*2){   //check if everything is covered by default.
+//
+//       x_l = x - adj_radius;
+//       if (!wrap_left && x_l < x0){ //if no wrapping allowed
+//         x_l = x0;
+//       }
+//
+//       x_r = x + adj_radius;
+//       if (!wrap_right && x_r > xn){ //if no wrapping allowed
+//         x_r = xn;
+//       }
+//
+//       //only relevant for wrapping, check that nothing is covered more than once
+//       if (x_l < x0 && (xn - (-x_l) ) <= x_r ){
+//         x_l = - (xn - x_r - 1); //end one right of x_r
+//       }
+//
+//       //only relevant for wrapping, check that nothing is covered more than once
+//       if (x_r > xn && (x_r - xn)  >= x_l){
+//         x_r = xn + x_l - 1; //end one left of x_l
+//       }
+//
+//     }
+//
+//     int y_d = y0;
+//     int y_u = yn;
+//     if (adj_radius < yn*2){
+//       int y_d = y - adj_radius;
+//       if (!wrap_bottom && y_d < y0){
+//         y_d = y0;
+//       }
+//
+//       int y_u = y + adj_radius;
+//       if (!wrap_top && y_u > yn){
+//         y_u = yn;
+//       }
+//
+//       //only relevant for wrapping, check that nothing is covered more than once
+//       if (y_d < y0 && ( yn - (- y_d) ) <= y_u ){
+//         y_d = - (yn - y_u - 1); //end one above of x_u
+//       }
+//
+//       //only relevant for wrapping, check that nothing is covered more than once
+//       if ( y_u > yn && (y_u - yn) >= y_d){
+//         y_u = yn + y_d - 1; //end one below of y_d
+//       }
+//
+//     }
+//
+//     //next, create a list of the potential candidates
+//     //05.07.2018 15:03:30 But change negative coords (wrapping checked before)
+//     int total = 0;
+//     for (int tx=x_l; tx<=x_r; tx++){ //by column
+//       for (int ty=y_d; ty<=y_u; ty++){ //elements in column
+//         total++; //checked
+//         int t_pd = geo_pseudo_distance(x,y,tx,ty,code_Wrap,xn,yn);
+//         if (t_pd<=pseudo_radius){
+//           if (tx<x0){
+//             tx = xn + tx; //temp.x < 0!
+//           } else if (tx>xn-1){
+//             tx -= xn;
+//           }
+//           if (ty<y0){
+//             ty = yn + ty;
+//           } else if (ty>yn-1){
+//             ty -= yn;
+//           }
+//           valid_objects.push_back(ext_gis_coords(tx,ty,t_pd) ); //add to valid objects
+//   //         PLOG("\n ADDING an item.");
+//         } else {
+//   //         PLOG("\n NOT Adding an item");
+//         }
+//       }
+//     }
+//     VERBOSE_MODE(true){
+//       PLOG("\n there are in %i options valid from %i checked.",valid_objects.size(),total);
+//     }
   }
 
-  if (sorted){
-    std::sort(std::begin(valid_objects),std::end(valid_objects), [](auto const &t1, auto const &t2){
-    return t1.pseudo_distance < t2.pseudo_distance; //sort ascending in distance
-    });
+  if (to_sort==true){
+    std::sort(std::begin(valid_objects),std::end(valid_objects));
    }
 
 }
@@ -400,51 +461,110 @@ object* ext_gis::LSD_by_coords(ext_gis_coords in){ //returns the corresponding L
 object* ext_gis::LSD_by_coords(coords in){ //returns the corresponding LSD patch, if it exists
   return ext_gis::LSD_by_coords(in.x,in.y);
 }
-
-double geo_distance(double x_1, double y_1, double x_2, double y_2){
-/* Calculate the distance between to patches of land using Pythagorean Theorem*/
-    double a_sq = x_1-x_2;
-    a_sq *= a_sq;
-    double b_sq = y_1-y_2;
-    b_sq *= b_sq;
-
-  return sqrt( a_sq + b_sq );
+object* ext_gis::LSD_by_coords(int_coords in){ //returns the corresponding LSD patch, if it exists
+  return ext_gis::LSD_by_coords(in.x,in.y);
 }
 
-double geo_distance(ext_gis_coords a, ext_gis_coords b){
-  return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+double geo_distance(double x_1, double y_1, double x_2, double y_2, int wrap, double xn, double yn){
+  return sqrt( geo_pseudo_distance (x_1,y_1,x_2,y_2, wrap, yn, xn) );
 }
 
-double geo_distance(coords a, coords b){
-  return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+double geo_distance(ext_gis_coords a, ext_gis_coords b, int wrap, double xn, double yn){
+  return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y, wrap, yn, xn);
 }
 
-double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2){
-/* Calculate the pseudo distance between to patches of land using Pythagorean Theorem*/
-    double a_sq = x_1-x_2;
-    a_sq *= a_sq;
-    double b_sq = y_1-y_2;
-    b_sq *= b_sq;
+double geo_distance(coords a, coords b, int wrap, double xn, double yn){
+  return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y, wrap, yn, xn);
+}
 
+//Better: Make a template function of it!
+double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2, int _wrap, double xn, double yn){
+/* Calculate the pseudo distance between to patches of land using Pythagorean Theorem
+  For wrapping, it is assumed that one wants to move from x_1 to x_2.
+  yn and xn are inclusive here.
+  y0 and x0 are assumed to be 0.
+*/
+
+  double a_sq = x_1-x_2;
+  double b_sq = y_1-y_2;
+
+  if (_wrap > 0){
+    Wrap wrap(_wrap); //translate wrapping info
+    if (wrap.right && x_1>x_2){
+      double alt_a = xn - x_1 + x_2;
+      if (alt_a < a_sq){
+        a_sq=alt_a;
+      }
+    } else if (wrap.left) {
+      double alt_a = xn - x_2 + x_1;
+      if (alt_a < a_sq){
+        a_sq=alt_a;
+      }
+    }
+
+    if (wrap.top && y_1 > y_2){
+      double alt_b = yn - y_1 + y_2;
+      if (alt_b < b_sq){
+        b_sq=alt_b;
+      }
+    } else if (wrap.bottom){
+      double alt_b = yn - y_2 + y_1;
+      if (alt_b < b_sq){
+        b_sq=alt_b;
+      }
+    }
+  }
+
+  a_sq *= a_sq;
+  b_sq *= b_sq;
   return a_sq + b_sq;
 }
 
-double geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2){
-/* Calculate the pseudo distance between to patches of land using Pythagorean Theorem*/
-    int a_sq = x_1-x_2;
-    a_sq *= a_sq;
-    int b_sq = y_1-y_2;
-    b_sq *= b_sq;
+int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int _wrap, int yn, int xn){
+/* Calculate the pseudo distance between to patches of land using Pythagorean Theorem
+  For wrapping, it is assumed that one wants to move from x_1 to x_2.
+  yn and xn are inclusive here.
+  y0 and x0 are assumed to be 0.
+*/
 
-  return double(a_sq + b_sq);
+  int a_sq = x_1-x_2;
+  int b_sq = y_1-y_2;
+
+  if (_wrap > 0){
+    Wrap wrap(_wrap); //translate wrapping info
+    if (wrap.right && x_1>x_2){
+      int alt_a = xn - x_1 + x_2;
+      if (alt_a < a_sq){
+        a_sq=alt_a;
+      }
+    } else if (wrap.left) {
+      int alt_a = xn - x_2 + x_1;
+      if (alt_a < a_sq){
+        a_sq=alt_a;
+      }
+    }
+
+    if (wrap.top && y_1 > y_2){
+      int alt_b = yn - y_1 + y_2;
+      if (alt_b < b_sq){
+        b_sq=alt_b;
+      }
+    } else if (wrap.bottom){
+      int alt_b = yn - y_2 + y_1;
+      if (alt_b < b_sq){
+        b_sq=alt_b;
+      }
+    }
+  }
+
+  a_sq *= a_sq;
+  b_sq *= b_sq;
+  return a_sq + b_sq;
 }
 
-double geo_pseudo_distance(ext_gis_coords a, ext_gis_coords b){
-  return geo_pseudo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
-}
 
-double geo_pseudo_distance(coords a, coords b){
-  return geo_pseudo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y);
+double geo_pseudo_distance(coords a, coords b, int wrap, double xn, double yn){
+  return geo_pseudo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y, wrap, yn, xn);
 }
 
 object* ext_gis_rsearch::next(){
@@ -463,7 +583,7 @@ object* ext_gis_rsearch::next(){
   } else
   {
     last = target->LSD_by_coords(*it_valid);
-    last_distance = it_valid->distance();
+//     last_distance = it_valid->distance();  //no need to calculate it
     VERBOSE_MODE(false){
       PLOG("\nOption is %i,%i, distance %g",it_valid->x,it_valid->y,it_valid->distance());
       PLOG("\nLSD Counterpart is %s, %g,%g, id %g",last->label,GET_VAR(last,"_x"),GET_VAR(last,"_y"),GET_ID(last));
@@ -505,8 +625,8 @@ bool ext_gis_patch::remove_LSD_agent(object* obj_to_remove){
   return false; //Obj was not associated to patch
 }
 
-ext_gis_coords ext_gis::random_position(){ //produce a random position on the lattice
-  return ext_gis_coords(random_x(),random_y() );
+coords ext_gis::random_position(){ //produce a random position on the lattice
+  return coords(random_x(),random_y() );
 }
 int ext_gis::random_y(){ //produce a random position on the lattice
   return uniform_int(0,yn-1);
