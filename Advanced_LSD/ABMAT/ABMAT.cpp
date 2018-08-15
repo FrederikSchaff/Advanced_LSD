@@ -193,9 +193,10 @@ namespace ABMAT {
     Intervals.push_back(temp);
     char buffer[64];
     snprintf(buffer,sizeof(char)*64,"\nABMAT :   .. (%i,%i)",start,end);
+    int abs_end = end<0?-end:end;
     plog(buffer);
-    if (end>max_t_interval){
-      max_t_interval=end; //update
+    if (abs_end>max_t_interval){
+      max_t_interval=abs_end; //update
     }
     return true;        
   }

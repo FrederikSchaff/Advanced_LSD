@@ -78,7 +78,7 @@ TRACK_SEQUENCE
 
                       TEST_MODE( !(alpha > 1 && beta < 0) && !(alpha > 0 && alpha < 1 && beta > 0) ){
                         	PLOG("\nError: alpha and beta combination not allowed!");
-                        	ABORT END_EQUATION(0.0)
+                         ABORT2
                       }
 
 
