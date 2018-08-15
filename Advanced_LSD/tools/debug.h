@@ -45,6 +45,29 @@ It also includes the other core-code files (all not fun_*)
 
 #include <ctime>
 #include <string>
+
+//in no window mode, stop all information printing
+#ifndef NO_WINDOW_TRACKING
+  #ifdef NO_WINDOW
+    #ifndef DISABLE_LOCAL_CLOCKS
+      #define DISABLE_LOCAL_CLOCKS
+    #endif
+    #ifdef USE_GDB_DEBUG_GLOBAL
+      #undef USE_GDB_DEBUG_GLOBAL
+    #endif
+    #ifndef SWITCH_TRACK_SEQUENCE_OFF
+      #define SWITCH_TRACK_SEQUENCE_OFF
+    #endif
+    #ifndef SWITCH_VERBOSE_OFF
+      #define SWITCH_VERBOSE_OFF
+    #endif
+    #ifndef SWITCH_TEST_OFF
+      #define SWITCH_TEST_OFF
+    #endif
+  #endif
+#endif
+
+
 #ifdef USE_GDB_DEBUG_GLOBAL
   bool GDB_DEBUG_GLOBAL = false; //use in gdb: watch GDB_DEBUG_GLOBAL
   //to do: measure time instead
@@ -67,7 +90,7 @@ It also includes the other core-code files (all not fun_*)
   #define RESET_LOCAL_CLOCK_X(DirectPrint)   void(DirectPrint);
   #define REPORT_LOCAL_CLOCK_X(mintime)         void(mintime);
   #define ADD_LOCAL_CLOCK_INFO(text)            void(text);
-  #define ADD_LOCAL_CLOCK_TRACKSEQUENCE
+  #define ADD_LOCAL_CLOCK_TRACKSEQUENCE      void();
 
 #else  // DISABLE_LOCAL_CLOCKS not defined
 
@@ -95,41 +118,35 @@ It also includes the other core-code files (all not fun_*)
       REPORT_LOCAL_CLOCK_report+="\n\tCLOCK Re-setting clock with new ID " + std::to_string(local_clock_id); \
     }
 
-#define REPORT_LOCAL_CLOCK_X(mintime)  \
-  {                             \
-    clock_gettime(CLOCK_MONOTONIC, &local_finish);\
-    double elapsed = (local_finish.tv_sec - local_start.tv_sec);\
-           elapsed += (local_finish.tv_nsec - local_start.tv_nsec) / 1000000000.0;\
-    if (double(mintime)<elapsed){\
-      if (!REPORT_LOCAL_CLOCK_DirectPrint){ \
-        PLOG("%s",REPORT_LOCAL_CLOCK_report.c_str()); \
-      } \
-        PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elapsed);\
-    }\
-  }
+  #define REPORT_LOCAL_CLOCK_X(mintime)  \
+    {                             \
+      clock_gettime(CLOCK_MONOTONIC, &local_finish);\
+      double elapsed = (local_finish.tv_sec - local_start.tv_sec);\
+             elapsed += (local_finish.tv_nsec - local_start.tv_nsec) / 1000000000.0;\
+      if (double(mintime)<elapsed){\
+        if (!REPORT_LOCAL_CLOCK_DirectPrint){ \
+          PLOG("%s",REPORT_LOCAL_CLOCK_report.c_str()); \
+        } \
+          PLOG("\n\tCLOCK Local clock with ID %i: Seconds elapsed: %g",local_clock_id,elapsed);\
+      }\
+    }
 
 
-#define ADD_LOCAL_CLOCK_INFO(text) \
-  if (REPORT_LOCAL_CLOCK_DirectPrint){ \
-    PLOG(text); \
-  } else {    \
-    REPORT_LOCAL_CLOCK_report += string(text);  \
-  }
+  #define ADD_LOCAL_CLOCK_INFO(text) \
+    if (REPORT_LOCAL_CLOCK_DirectPrint){ \
+      PLOG(text); \
+    } else {    \
+      REPORT_LOCAL_CLOCK_report += string(text);  \
+    }
 
-//       char buffer[300];  \
-//     snprintf(buffer,sizeof(char)*300,text); \
-//     REPORT_LOCAL_CLOCK_report += string(buffer); \
-// An option to pass info same as in PLOG would be nice.
-
-#define ADD_LOCAL_CLOCK_TRACKSEQUENCE \
-    REPORT_LOCAL_CLOCK_report += TRACK_SEQUENCE_INFO;
+  #define ADD_LOCAL_CLOCK_TRACKSEQUENCE \
+      REPORT_LOCAL_CLOCK_report += TRACK_SEQUENCE_INFO;
 
 #endif  //defined DISABLE_LOCAL_CLOCKS end
 
 
 /*also there is
-        ADD_LOCAL_CLOCK_INFO("text")   - pure text!
-        ADD_LOCAL_CLOCK_TRACKSEQUENCE
+       Some wrapers
 */
 #define SET_LOCAL_CLOCK                 SET_LOCAL_CLOCK_X(true)
 #define SET_LOCAL_CLOCK_RF              SET_LOCAL_CLOCK_X(false)
@@ -144,23 +161,6 @@ It also includes the other core-code files (all not fun_*)
 
 #define REPORT_LOCAL_CLOCK              REPORT_LOCAL_CLOCK_X(0.0)
 #define REPORT_LOCAL_CLOCK_CND(time)    REPORT_LOCAL_CLOCK_X(time)
-
-
-
-//in no window mode, stop all information printing
-#ifndef NO_WINDOW_TRACKING
-  #ifdef NO_WINDOW
-    #ifndef SWITCH_TRACK_SEQUENCE_OFF
-      #define SWITCH_TRACK_SEQUENCE_OFF
-    #endif
-    #ifndef SWITCH_VERBOSE_OFF
-      #define SWITCH_VERBOSE_OFF
-    #endif
-    #ifndef SWITCH_TEST_OFF
-      #define SWITCH_TEST_OFF
-    #endif
-  #endif
-#endif
 
 
 /* To clearly mark tests and also allow to not run them */
@@ -208,13 +208,11 @@ It also includes the other core-code files (all not fun_*)
   #define TRACK_SEQUENCE_FIRST_OR_LAST_ALWAYS \
     PLOG(LSD_VALIDATE::track_sequence(t,p,c,var,false).c_str());
   #define TRACK_SEQUENCE_ALWAYS { PLOG(LSD_VALIDATE::track_sequence(t,p,c,var).c_str()); };
+  #define TRACK_SEQUENCE_INFO  LSD_VALIDATE::track_sequence(t,p,c,var).c_str()
 #else
-  #define TRACK_SEQUENCE
-  #define TRACK_SEQUENCE_FIRST_OR_LAST
-  #define TRACK_SEQUENCE_FIRST_OR_LAST_ALWAYS
-  #define TRACK_SEQUENCE_ALWAYS
+  #define TRACK_SEQUENCE  void();
+  #define TRACK_SEQUENCE_FIRST_OR_LAST void();
+  #define TRACK_SEQUENCE_FIRST_OR_LAST_ALWAYS void();
+  #define TRACK_SEQUENCE_ALWAYS void();
+  #define TRACK_SEQUENCE_INFO void();
 #endif
-
-// a separate command to only receive the info.
-#define TRACK_SEQUENCE_INFO  LSD_VALIDATE::track_sequence(t,p,c,var).c_str()
-
