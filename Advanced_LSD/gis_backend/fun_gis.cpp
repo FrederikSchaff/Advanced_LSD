@@ -19,7 +19,7 @@ TRACK_SEQUENCE
 
   TEST_MODE(xn<1 || yn<1){
     PLOG("\nERROR! Gis_Init: select xn,yn >= 1!");
-    ABORT
+    ABORT2
     END_EQUATION(0.0);
   }
 

@@ -189,10 +189,10 @@ It also includes the other core-code files (all not fun_*)
 #endif
 
 /* A more severe ABORT, that also stops the computation of the
-  current EQUATION*/
+  current EQUATION but not the subsequent simulations*/
 #define ABORT2 \
         ABORT_STATS \
-        ABORT       \
+        quit = 1;       \
         END_EQUATION(0.0) //prematurely end the current equation
 
 /* Tracking of equations etc., special tracking of objects with "_ID" or "ID".*/
