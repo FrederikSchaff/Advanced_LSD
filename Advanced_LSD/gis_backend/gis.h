@@ -74,6 +74,7 @@ double geo_distance(coords a, coords b, int wrap=0, double xn=0, double yn=0);
 //sqrt(x)<sqrt(y) if x<y
 double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2, int wrap=0, double xn=0, double yn=0);
 int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int wrap=0, int yn=0, int xn=0);
+int geo_pseudo_distance(int_coords a, int_coords b, int _wrap=0, int yn=0, int xn=0);
 double geo_pseudo_distance(coords a, coords b, int wrap=0, double xn=0, double yn=0);
 
 struct Wrap{
@@ -119,15 +120,7 @@ struct coords {
   }
 };
 
-struct int_coords {
-  int x;
-  int y;
-  int check_comp = 0;
-  int_coords(int x, int y) : x(x), y(y) {};
-  friend bool operator <(const int_coords& a, const int_coords& b) {
-    return std::tie(a.x, a.y) < std::tie(a.x, a.y);
-  }
-};
+
 
 //ext_gis_coords is a struct that holds x and y coords and optionally a distance
 struct ext_gis_coords{
@@ -149,7 +142,16 @@ struct ext_gis_coords{
     return pseudo_distance < b.pseudo_distance;
   }
 };
-
+struct int_coords {
+  int x;
+  int y;
+  int_coords(int x, int y) : x(x), y(y) {};
+  int_coords(coords xy) : x(int(xy.x)), y(int(xy.y)) {};
+  int_coords(ext_gis_coords xy) : x(int(xy.x)), y(int(xy.y)) {};
+  friend bool operator <(const int_coords& a, const int_coords& b) {
+    return std::tie(a.x, a.y) < std::tie(a.x, a.y);
+  }
+};
 
 //ext_gis_patch is the smallest "unit" in the gis layer.
 //Currently it is of fixed size. Later on this may change.
@@ -248,7 +250,7 @@ class ext_gis_rsearch {
 
     //own
 
-    coords origin; //where the search starts
+    int_coords origin; //where the search starts
     object* last; //the current object selected
     double last_distance; //distance from last object to origin of search
 
@@ -260,6 +262,12 @@ class ext_gis_rsearch {
     std::vector<ext_gis_coords> valid_objects; //distance , coords
     std::vector<ext_gis_coords>::iterator it_valid; //simple forward iterator
     //std::vector <std::vector <bool> > search_space; //xy search space
+
+    ext_gis_rsearch(ext_gis* _target, int_coords _origin, double _radius=-1, int _type=0) : target(_target), origin(_origin), radius(_radius), type(_type)
+    {
+      pseudo_radius = radius*radius;
+      init();
+    }
 
     ext_gis_rsearch(ext_gis* _target, coords _origin, double _radius=-1, int _type=0) : target(_target), origin(_origin), radius(_radius), type(_type)
     {

@@ -519,6 +519,9 @@ double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2, int _
   b_sq *= b_sq;
   return a_sq + b_sq;
 }
+int geo_pseudo_distance(int_coords a, int_coords b, int _wrap, int yn, int xn){
+  return geo_pseudo_distance(a.x, a.y, b.x, b.y, _wrap, yn, xn);
+}
 
 int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int _wrap, int yn, int xn){
 /* Calculate the pseudo distance between to patches of land using Pythagorean Theorem

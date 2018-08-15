@@ -74,12 +74,27 @@
   //Needed: Iterator like for moving through associated obj with given label
   //in given neighbourhood.
 
-#define GEO_DISTANCE(x1,y1,x2,y2) geo_distance((double)x1, (double)y1, (double)x2, (double) y2)
-#define GEO_PSEUDODISTANCE(x1,y1,x2,y2) geo_pseudo_distance(x1, y1, x2, y2)
+  //Wrapping info needs to be passed
+
 
 #define GIS_COORDS(lsd_obj) coords(GET_VAR(lsd_obj,"_x"),GET_VAR(lsd_obj,"_y") )
 #define GIS_COORDS_INT(lsd_obj) int_coords(int(GET_VAR(lsd_obj,"_x")),int(GET_VAR(lsd_obj,"_y")) )
 
-#define GEO_DISTANCE_OBJ(obj1,obj2)       geo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
-#define GEO_PSEUDODISTANCE_OBJ(obj1,obj2) geo_pseudo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
 
+#define GEO_DISTANCE(x1,y1,x2,y2,P_EXT_GIS)\
+  geo_distance((double)x1, (double)y1, (double)x2,(double)y2, P_EXT_GIS->code_Wrap, P_EXT_GIS->xn-1, P_EXT_GIS->xy-1)
+
+#define GEO_PSEUDODISTANCE(x1,y1,x2,y2,P_EXT_GIS)\
+  geo_pseudo_distance(x1, y1, x2, y2, P_EXT_GIS->code_Wrap, P_EXT_GIS->xn-1, P_EXT_GIS->xy-1)
+
+
+#define GEO_DISTANCE_OBJ(obj1,obj2,P_EXT_GIS)       geo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2),P_EXT_GIS)
+#define GEO_PSEUDODISTANCE_OBJ(obj1,obj2,P_EXT_GIS) geo_pseudo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2),P_EXT_GIS)
+
+//_noWrap
+#define GEO_DISTANCE_noWrap(x1,y1,x2,y2) geo_distance((double)x1, (double)y1, (double)x2, (double) y2)
+#define GEO_PSEUDODISTANCE_noWrap(x1,y1,x2,y2) geo_pseudo_distance(x1, y1, x2, y2)
+
+
+#define GEO_DISTANCE_OBJ_noWrap(obj1,obj2)       geo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
+#define GEO_PSEUDODISTANCE_OBJ_noWrap(obj1,obj2) geo_pseudo_distance(GIS_COORDS(obj1), GIS_COORDS(obj2))
