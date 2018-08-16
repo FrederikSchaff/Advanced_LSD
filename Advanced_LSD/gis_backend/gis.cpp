@@ -466,15 +466,20 @@ object* ext_gis::LSD_by_coords(int_coords in){ //returns the corresponding LSD p
 }
 
 double geo_distance(double x_1, double y_1, double x_2, double y_2, int wrap, double xn, double yn){
-  return sqrt( geo_pseudo_distance (x_1,y_1,x_2,y_2, wrap, yn, xn) );
+  double temp = geo_pseudo_distance (x_1,y_1,x_2,y_2, wrap, yn, xn);
+  return temp>0?sqrt(temp):0.0;
 }
 
 double geo_distance(ext_gis_coords a, ext_gis_coords b, int wrap, double xn, double yn){
   return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y, wrap, yn, xn);
 }
 
-double geo_distance(coords a, coords b, int wrap, double xn, double yn){
+double geo_distance(int_coords a, int_coords b, int wrap, double xn, double yn){
   return geo_distance((double) a.x, (double) a.y, (double) b.x, (double) b.y, wrap, yn, xn);
+}
+
+double geo_distance(coords a, coords b, int wrap, double xn, double yn){
+  return geo_distance(a.x, a.y, b.x, b.y, wrap, yn, xn);
 }
 
 //Better: Make a template function of it!
