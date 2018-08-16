@@ -668,7 +668,7 @@ namespace ABMAT {
 
     Timeseries_individual.clear();
           Runs_individual.clear();
-        RunsA_individual.clear();          
+         RunsA_individual.clear();
       LMoments_individual.clear();    
           Data_individual.clear();
        Pointer_individual.clear();    
@@ -1579,67 +1579,67 @@ namespace ABMAT {
       
       //for each statistic
       for (int k=0; k<Labels_individual.size();k++){
-        //Test if it shall be saved.      
+        //Test if it shall be saved.
         if (Timeseries_individual[k]){
-        
-          //Save individuals as columns
-#ifndef SUPPRESS_SUB_FOLDERS  //a mode with only one results folder for linux (in vm)          
-          buffer = indiv_path.c_str();
-          buffer += "/";
-          buffer += Labels_individual[k].c_str();         
-//           snprintf(buffer,sizeof(char)*256,"%s/%s.tsv",indiv_path,Labels_individual[k].c_str());
-#else
-//           snprintf(buffer,sizeof(char)*256,"%s_%s.tsv",indiv_path,Labels_individual[k].c_str());
-          buffer = indiv_path.c_str();
-          buffer += "_";
-          buffer += Labels_individual[k].c_str(); 
-#endif
-          buffer += "_indiv";
-          buffer += ".tsv";                
-          save_file2.open(buffer.c_str(),std::ios_base::out | std::ios_base::trunc);
-          
-          if (save_file2){
-            char msg[256];
-            snprintf(msg,sizeof(char)*256,"\nABMAT :   Saving results (%s: %i-%i ; ABMAT - Timeseries, individual) in file : ",Labels_individual[k].c_str(),1,Data_individual[k].size());
-            plog(msg);
-            plog(buffer.c_str());
-          } else {
-            plog("\nABMAT :   Error: Could not open file for saving data.");
-            return false;
-          }
-        
-          //Create Header                         
-          //for each individual          
-          for(int i=0; i<Data_individual[k].size();i++) {
-//             snprintf(buffer,sizeof(char)*256,"Indiv_%i",i+1); 
-            save_file2 << Labels_individual[k] << "_CID_" << CID << "_Ind_" << i+1;                
-            if (i<Data_individual[k].size()-1){
-              save_file2 << "\t";
+
+            //Save individuals as columns
+  #ifndef SUPPRESS_SUB_FOLDERS  //a mode with only one results folder for linux (in vm)
+            buffer = indiv_path.c_str();
+            buffer += "/";
+            buffer += Labels_individual[k].c_str();
+  //           snprintf(buffer,sizeof(char)*256,"%s/%s.tsv",indiv_path,Labels_individual[k].c_str());
+  #else
+  //           snprintf(buffer,sizeof(char)*256,"%s_%s.tsv",indiv_path,Labels_individual[k].c_str());
+            buffer = indiv_path.c_str();
+            buffer += "_";
+            buffer += Labels_individual[k].c_str();
+  #endif
+            buffer += "_indiv";
+            buffer += ".tsv";
+            save_file2.open(buffer.c_str(),std::ios_base::out | std::ios_base::trunc);
+
+            if (save_file2){
+              char msg[256];
+              snprintf(msg,sizeof(char)*256,"\nABMAT :   Saving results (%s: %i-%i ; ABMAT - Timeseries, individual) in file : ",Labels_individual[k].c_str(),1,Data_individual[k].size());
+              plog(msg);
+              plog(buffer.c_str());
             } else {
-              save_file2 << std::endl;
+              plog("\nABMAT :   Error: Could not open file for saving data.");
+              return false;
             }
-          }
-          
-          //Parse data
-          //for each entry (row!) -- Note: Thise presumes that the columns are fo equal length (guaranteed)
-          char tmp[256];
-          sprintf(tmp,"\nABMAT :    Size of data is %i x %i (cols x rows)",Data_individual[k].size(),Data_individual[k][0].size());
-          vlog(tmp);
-          for(int row=0; row<Data_individual[k][0].size();row++) {
-            //for each individual aka column
+
+            //Create Header
+            //for each individual
             for(int i=0; i<Data_individual[k].size();i++) {
-              save_file2 << Data_individual.at(k).at(i).at(row);
+  //             snprintf(buffer,sizeof(char)*256,"Indiv_%i",i+1);
+              save_file2 << Labels_individual[k] << "_CID_" << CID << "_Ind_" << i+1;
               if (i<Data_individual[k].size()-1){
                 save_file2 << "\t";
               } else {
                 save_file2 << std::endl;
               }
             }
-          }
 
-          save_file2.close();
+            //Parse data
+            //for each entry (row!) -- Note: Thise presumes that the columns are fo equal length (guaranteed)
+            char tmp[256];
+            sprintf(tmp,"\nABMAT :    Size of data is %i x %i (cols x rows)",Data_individual[k].size(),Data_individual[k][0].size());
+            vlog(tmp);
+            for(int row=0; row<Data_individual[k][0].size();row++) {
+              //for each individual aka column
+              for(int i=0; i<Data_individual[k].size();i++) {
+                save_file2 << Data_individual.at(k).at(i).at(row);
+                if (i<Data_individual[k].size()-1){
+                  save_file2 << "\t";
+                } else {
+                  save_file2 << std::endl;
+                }
+              }
+            }
+
+            save_file2.close();
+          }
         }
-      }           
       
           /******************
            *                   MICRO STATISTICS       ************************/
