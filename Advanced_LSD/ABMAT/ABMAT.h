@@ -100,6 +100,7 @@ namespace ABMAT //a general namespace for the ABMAT tools
   std::vector<std::string> Labels_macro;
   std::vector<std::string> Labels_macro_short;
   std::vector<bool> Timeseries_macro;
+  std::vector<bool> CumTimeseries_macro;
   std::vector<bool> Runs_macro;
   std::vector<bool> RunsA_macro; //assymmetrical option, see source.
   std::vector<bool> Stats_macro;

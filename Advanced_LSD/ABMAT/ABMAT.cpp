@@ -306,6 +306,7 @@ namespace ABMAT {
       kind++;
       Labels_macro.push_back(Label);
       Timeseries_macro.push_back(Options.find("save")!=std::string::npos);  //evaluates to true if option selected, else false.
+      CumTimeseries_macro.push_back(Options.find("cumSave")!=std::string::npos);  //evaluates to true if option selected, else false.
       Runs_macro.push_back(Options.find("runs")!=std::string::npos);
       RunsA_macro.push_back(Options.find("runs_asym")!=std::string::npos); //runsA is an additional option, always containing standard symmetrical runs.
       Stats_macro.push_back(Options.find("stats")!=std::string::npos);
@@ -674,6 +675,7 @@ namespace ABMAT {
        Pointer_individual.clear();    
 
     Timeseries_macro.clear();
+ CumTimeseries_macro.clear();
           Runs_macro.clear();
          RunsA_macro.clear();
       LMoments_macro.clear();
@@ -1069,7 +1071,7 @@ namespace ABMAT {
         save_file << "\t" << elapsed << "\t" << size_of_Data; 
       }
       
-      save_file << std::endl; //Finished
+      save_file << "\n"; //Finished
     }
     save_file.close();
           
@@ -1461,7 +1463,7 @@ namespace ABMAT {
                   result_files[cur_interval] << std::get<double>(stats_out[i]); 
               }
             }
-            result_files[cur_interval] << std::endl; //Finished row
+            result_files[cur_interval] << "\n"; //Finished row
             if (line==1) {
               result_files[cur_interval].close();      //free everything from memory
             }
@@ -1516,40 +1518,61 @@ namespace ABMAT {
             continue;
           }
 
-        //Test if it shall be saved.      
-        if (Timeseries_macro[i]){
-#ifndef SUPPRESS_SUB_FOLDERS  //a mode with only one results folder for linux (in vm)        
-//           snprintf(buffer,sizeof(char)*256,"%s/%s.tsv",timeseries,Labels_macro[i].c_str());
-          buffer = timeseries.c_str();
-          buffer += "/";
-          buffer += Labels_macro[i].c_str();            
-#else
-          buffer = timeseries.c_str();
-          buffer += "_";
-          buffer += Labels_macro[i].c_str();                     
-//           snprintf(buffer,sizeof(char)*256,"%s_%s.tsv",timeseries,Labels_macro[i].c_str());
-#endif
-          buffer += "_macro";
-          buffer += ".tsv";            
-          save_file2.open(buffer.c_str(),std::ios_base::out | std::ios_base::trunc);
-          
-          if (save_file2){
-            char msg[256];
-            snprintf(msg,sizeof(char)*256,"\nABMAT :   Saving results (%s ; ABMAT - Timeseries, macro) in file : ",Labels_macro[i].c_str());
-            plog(msg);
-            plog(buffer.c_str());
-          } else {
-            plog("\nABMAT :   Error: Could not open file for saving data.");
-            return false;
+        //Test if it shall be saved.
+        bool cumSave  = CumTimeseries_macro[i];
+        bool save     = Timeseries_macro[i];
+
+        for (int toSaveCum = 0; toSaveCum < 2; toSaveCum++ ){
+          if ( (save && toSaveCum==0) || (cumSave && toSaveCum==1) ){
+  #ifndef SUPPRESS_SUB_FOLDERS  //a mode with only one results folder for linux (in vm)
+  //           snprintf(buffer,sizeof(char)*256,"%s/%s.tsv",timeseries,Labels_macro[i].c_str());
+            buffer = timeseries.c_str();
+            buffer += "/";
+            if (toSaveCum == 1){
+              buffer += "Cum_";
+            }
+            buffer += Labels_macro[i].c_str();
+  #else
+            buffer = timeseries.c_str();
+            buffer += "_";
+            if (toSaveCum == 1){
+              buffer += "Cum_";
+            }
+            buffer += Labels_macro[i].c_str();
+  //           snprintf(buffer,sizeof(char)*256,"%s_%s.tsv",timeseries,Labels_macro[i].c_str());
+  #endif
+            buffer += "_macro";
+            buffer += ".tsv";
+            save_file2.open(buffer.c_str(),std::ios_base::out | std::ios_base::trunc);
+
+            if (save_file2){
+              char msg[256];
+              if (toSaveCum == 1){
+                snprintf(msg,sizeof(char)*256,"\nABMAT :   Saving results (%s ; ABMAT - cummulative time series, macro) in file : ",Labels_macro[i].c_str());
+              } else {
+                snprintf(msg,sizeof(char)*256,"\nABMAT :   Saving results (%s ; ABMAT - time series, macro) in file : ",Labels_macro[i].  c_str());
+              }
+              plog(msg);
+              plog(buffer.c_str());
+            } else {
+              plog("\nABMAT :   Error: Could not open file for saving data.");
+              return false;
+            }
+
+            //Create Name of Time-Series as header
+            save_file2 << (toSaveCum==1?"Cum_":"") << Labels_macro[i].c_str() << "_CID_" << std::to_string(CID) << "\n";
+            //Write data
+            double cumulative = 0.0;
+            for (int j=0; j<Data_macro[i].size();j++){
+              if (toSaveCum==0){
+                save_file2 << Data_macro.at(i).at(j) << "\n"; //.at() is more save than []
+              } else {
+                cumulative += Data_macro.at(i).at(j);
+                save_file2 << Data_macro.at(i).at(j) << "\n"; //.at() is more save than []
+              }
+            }
+            save_file2.close();
           }
-          
-          //Create Name of Time-Series as header
-          save_file2 << Labels_macro[i].c_str() << "_CID_" << std::to_string(CID) << std::endl;
-          //Write data
-          for (int j=0; j<Data_macro[i].size();j++){
-            save_file2 << Data_macro.at(i).at(j) << std::endl; //.at() is more save than []
-          }      
-          save_file2.close();
         }
       }
       
@@ -1616,7 +1639,7 @@ namespace ABMAT {
               if (i<Data_individual[k].size()-1){
                 save_file2 << "\t";
               } else {
-                save_file2 << std::endl;
+                save_file2 << "\n";
               }
             }
 
@@ -1632,7 +1655,7 @@ namespace ABMAT {
                 if (i<Data_individual[k].size()-1){
                   save_file2 << "\t";
                 } else {
-                  save_file2 << std::endl;
+                  save_file2 << "\n";
                 }
               }
             }
@@ -1693,7 +1716,7 @@ namespace ABMAT {
             }            
           }
 
-          save_file2 << std::endl;
+          save_file2 << "\n";
                 
       //data
           for (int j=0; j<Data_micro[i][0].size();j++){
@@ -1710,7 +1733,7 @@ namespace ABMAT {
                 save_file2 << Data_micro_lmoments.at(i).at(k).at(j); //.at() is more save than []
               }
             }
-            save_file2 << std::endl;
+            save_file2 << "\n";
           }      
           
           save_file2.close();
