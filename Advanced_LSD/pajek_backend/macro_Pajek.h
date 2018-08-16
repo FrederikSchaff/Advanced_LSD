@@ -52,7 +52,12 @@
 #define PAJ_INIT(ParentFolderName,SetName,SetID,NetName) 	      pajek_core_object.init(ParentFolderName,SetName,SetID,NetName);
 #define PAJ_INIT_ANIM(ParentFolderName,SetName,SetID,NetName) 	pajek_core_object.init(ParentFolderName,SetName,SetID,NetName,true);
 
-#define PAJ_SAVE    pajek_core_object.save_to_file();
+#define PAJ_SAVE \
+    LOG("\nSaving to pajek"); \
+    SET_LOCAL_CLOCK_RF \
+    pajek_core_object.save_to_file(); \
+    REPORT_LOCAL_CLOCK \
+    LOG("\nDone")
 
 #define PAJ_ADD_V_CL(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL)   pajek_core_object.add_vertice(TIME,ID,KIND,VALUE,X,Y,SYMBOL,X_FACT,Y_FACT,COLOR,LABEL);
 

@@ -112,9 +112,5 @@ For all the backends, there is a Patch-class defined. The default is "Patch"
   PAJ_MAKE_AVAILABLE
 
 #define CLOSE_ADVANCED_LSD \
-    LOG("\nSaving to pajek"); \
-    SET_LOCAL_CLOCK_RF \
     PAJ_SAVE \
-    REPORT_LOCAL_CLOCK \
-    LOG("\nDone")
 
