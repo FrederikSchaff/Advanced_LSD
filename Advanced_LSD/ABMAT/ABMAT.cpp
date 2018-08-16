@@ -1568,7 +1568,7 @@ namespace ABMAT {
                 save_file2 << Data_macro.at(i).at(j) << "\n"; //.at() is more save than []
               } else {
                 cumulative += Data_macro.at(i).at(j);
-                save_file2 << Data_macro.at(i).at(j) << "\n"; //.at() is more save than []
+                save_file2 << cumulative << "\n"; //.at() is more save than []
               }
             }
             save_file2.close();

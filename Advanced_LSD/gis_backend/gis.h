@@ -274,10 +274,11 @@ class ext_gis_rsearch {
       pseudo_radius = radius*radius;
       init();
     } //each time a new search is started we create a new object.
-//    ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius=-1, int _type=0); //each time a new search is started we create a new object.
-//     ext_gis_rsearch(){
-//       PLOG("\next_gis_rsearch() empty default initialisation called.");
-//     }; //default, does not initialise stuff.
+   ext_gis_rsearch(ext_gis* _target, int _origin_x, int _origin_y, double _radius=-1, int _type=0)
+    : target(_target),origin(int_coords(_origin_x,_origin_y)),radius(_radius), type(_type){
+      pseudo_radius = radius*radius;
+      init();
+    };
 
     object* next();  //provide next LSD patch object in search radius,
                     //or NULL if done.
