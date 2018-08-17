@@ -312,6 +312,7 @@ namespace ABMAT {
       Stats_macro.push_back(Options.find("stats")!=std::string::npos);
       Initial_macro.push_back(Options.find("first")!=std::string::npos);
       Last_macro.push_back(Options.find("last")!=std::string::npos);
+      cumulative_macro.push_back(Options.find("cumulative")!=std::string::npos); //cumulative
       Const_macro.push_back(Options.find("const")!=std::string::npos);
       LMoments_macro.push_back(Options.find("lmoments")!=std::string::npos);
       onlycompare_macro.push_back(theCondVar);
@@ -1229,6 +1230,14 @@ namespace ABMAT {
             if (Last_macro[i]){
               //save initial value
               stats_out.emplace_back(std::make_tuple(Data_macro[i].back(),Labels_macro_short[i] + "_lstV"));
+            }
+            if (cumulative_macro[i]){
+              //save initial value
+              double cumulative = 0.0;
+              for (const auto& element : Data_macro[i]){
+                cumulative += element;
+              }
+              stats_out.emplace_back(std::make_tuple(cumulative,Labels_macro_short[i] + "_cum"));
             }
 
             //Check if it is a constant. In this case, we may shorten the infos taken.

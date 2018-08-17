@@ -106,6 +106,7 @@ namespace ABMAT //a general namespace for the ABMAT tools
   std::vector<bool> Stats_macro;
   std::vector<bool> Initial_macro;
   std::vector<bool> Last_macro;
+  std::vector<bool> cumulative_macro;
   std::vector<bool> Const_macro;
   std::vector<bool> LMoments_macro;
   std::vector <std::vector <std::string>>  Compare_macro;  //can be more than one var for comparison
