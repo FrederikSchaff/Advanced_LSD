@@ -77,7 +77,7 @@ int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int wrap=0, int yn=0
 int geo_pseudo_distance(int_coords a, int_coords b, int _wrap=0, int yn=0, int xn=0);
 double geo_pseudo_distance(coords a, coords b, int wrap=0, double xn=0, double yn=0);
 
-struct Wrap{
+struct Wrap_OLD{
     bool left;
     bool right;
     bool top;
@@ -88,13 +88,13 @@ struct Wrap{
     2-bit: top      : 0=0 1=4
     3-bit: bottom   : 0=0 1=8
     */
-    Wrap(int wrap){
+    Wrap_OLD(int wrap){
       if (wrap>7){bottom=true; wrap-=8;} else {bottom=false; }
       if (wrap>3){top=true;    wrap-=4;} else {top=false;    }
       if (wrap>1){right=true;  wrap-=2;} else {right=false;  }
       if (wrap>0){left=true;           } else {left=false;   }
     }
-    Wrap(bool left, bool right, bool top, bool bottom) : left(left),right(right),top(top),bottom(bottom) {}
+    Wrap_OLD(bool left, bool right, bool top, bool bottom) : left(left),right(right),top(top),bottom(bottom) {}
 };
 
 int transcode_Wrap(bool left, bool right, bool top, bool bottom){

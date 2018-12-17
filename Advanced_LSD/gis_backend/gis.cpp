@@ -494,7 +494,7 @@ double geo_pseudo_distance(double x_1, double y_1, double x_2, double y_2, int _
   double b_sq = y_1-y_2;
 
   if (_wrap > 0){
-    Wrap wrap(_wrap); //translate wrapping info
+    Wrap_OLD wrap(_wrap); //translate wrapping info
     if (wrap.right && x_1>x_2){
       double alt_a = xn - x_1 + x_2;
       if (alt_a < a_sq){
@@ -539,7 +539,7 @@ int geo_pseudo_distance(int x_1, int y_1, int x_2, int y_2, int _wrap, int yn, i
   int b_sq = y_1-y_2;
 
   if (_wrap > 0){
-    Wrap wrap(_wrap); //translate wrapping info
+    Wrap_OLD wrap(_wrap); //translate wrapping info
     if (wrap.right && x_1>x_2){
       int alt_a = xn - x_1 + x_2;
       if (alt_a < a_sq){

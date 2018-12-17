@@ -241,7 +241,7 @@ TRACK_SEQUENCE
     if ( (death_age == -1 && pop_uniform() < P_EXT(ext_pop)->pop_hazard_rate(age) )
          || (death_age >= 0 && (age >= death_age ) )
        ) {
-      if (others_alive || go_brother(cur)!=NULL){
+      if (others_alive || cur->next!=NULL){
         V_CHEAT("Pop_agent_death",cur);
         dead++;
       } else {

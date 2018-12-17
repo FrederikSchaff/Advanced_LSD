@@ -448,7 +448,7 @@ namespace ABMAT {
 //         root->stat( condLabel.c_str(), stats);
 //         plog("\n Stats command yields variance: ");plog(std::to_string(stats[2]).c_str());
 //         plog("\n And first agent has: "); plog(std::to_string(VS(cur_r,condLabel.c_str())).c_str()); 
-        for (;cur_r!=NULL; cur_r=go_brother(cur_r)){ //Cycle through all objects of same kind
+        for (;cur_r!=NULL; cur_r=cur_r->next){ //Cycle through all objects of same kind
           conditions.push_back(int(VS(cur_r,condLabel.c_str()))); //add variable to conditions                        
         }
         std::sort(conditions.begin(),conditions.end()); //sort
@@ -557,7 +557,7 @@ namespace ABMAT {
       object * cur = curv->up;   
       
       //if conditional is selected, only add those who meet the criterium         
-      for(;cur!=NULL; cur=go_brother(cur)){
+      for(;cur!=NULL; cur=cur->next){
         if (!std::get<bool>(Conditional_micro.at(i)) 
               || std::get<int>(Conditional_micro.at(i)) == int(VS(cur,std::get<1>(Conditional_micro.at(i)).c_str())) ){
           pop_dist_full.push_back(VS(cur,Labels_micro[i].c_str() ));
@@ -589,7 +589,7 @@ namespace ABMAT {
       int count_adds = 0;
       variable * curv = cur_r->search_var(cur_r,Labels_individual[i].c_str());  //search first item
       object * cur = curv->up; //get pointer of item      
-      for(;cur!=NULL; cur=go_brother(cur)){ //Cycle through LSD items
+      for(;cur!=NULL; cur=cur->next){ //Cycle through LSD items
         //Get to corresponding item in objects - room for more efficient cycling 
         object * cur_ABMAT = NULL;          
         for(int k=0; k<Pointer_individual[i].size(); k++){
